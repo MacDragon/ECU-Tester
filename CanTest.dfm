@@ -2,7 +2,7 @@ object MainForm: TMainForm
   Left = 257
   Top = 113
   BorderStyle = bsSingle
-  Caption = 'Formula CANSim'
+  Caption = 'Formula ECUCANTest'
   ClientHeight = 648
   ClientWidth = 973
   Color = clBtnFace
@@ -22,20 +22,6 @@ object MainForm: TMainForm
     648)
   PixelsPerInch = 96
   TextHeight = 13
-  object Label27: TLabel
-    Left = 94
-    Top = 393
-    Width = 4
-    Height = 13
-    Caption = '-'
-  end
-  object Label28: TLabel
-    Left = 94
-    Top = 412
-    Width = 4
-    Height = 13
-    Caption = '-'
-  end
   object GroupBox1: TGroupBox
     Left = 8
     Top = 8
@@ -43,41 +29,6 @@ object MainForm: TMainForm
     Height = 632
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 0
-    object LabelAccelL: TLabel
-      Left = 16
-      Top = 139
-      Width = 30
-      Height = 13
-      Caption = 'AccelL'
-    end
-    object LabelAccelR: TLabel
-      Left = 16
-      Top = 166
-      Width = 32
-      Height = 13
-      Caption = 'AccelR'
-    end
-    object LabelBrakeF: TLabel
-      Left = 16
-      Top = 216
-      Width = 33
-      Height = 13
-      Caption = 'BrakeF'
-    end
-    object LabelBrakeR: TLabel
-      Left = 16
-      Top = 243
-      Width = 34
-      Height = 13
-      Caption = 'BrakeR'
-    end
-    object LabelSteering: TLabel
-      Left = 16
-      Top = 319
-      Width = 40
-      Height = 13
-      Caption = 'Steering'
-    end
     object Label3: TLabel
       Left = 624
       Top = 50
@@ -91,27 +42,6 @@ object MainForm: TMainForm
       Width = 6
       Height = 13
       Caption = '0'
-    end
-    object Label4: TLabel
-      Left = 16
-      Top = 397
-      Width = 31
-      Height = 13
-      Caption = 'TempL'
-    end
-    object Label6: TLabel
-      Left = 16
-      Top = 424
-      Width = 33
-      Height = 13
-      Caption = 'TempR'
-    end
-    object Label9: TLabel
-      Left = 16
-      Top = 369
-      Width = 38
-      Height = 13
-      Caption = 'Max Nm'
     end
     object OnBus: TLabel
       Left = 8
@@ -184,59 +114,13 @@ object MainForm: TMainForm
       TabOrder = 3
       OnClick = goOnBusClick
     end
-    object AccelL: TEdit
-      Left = 64
-      Top = 136
-      Width = 121
-      Height = 21
-      NumbersOnly = True
-      TabOrder = 4
-      Text = '0'
-    end
-    object AccelR: TEdit
-      Left = 64
-      Top = 163
-      Width = 121
-      Height = 21
-      NumbersOnly = True
-      TabOrder = 5
-      Text = '0'
-    end
-    object BrakeF: TEdit
-      Left = 64
-      Top = 213
-      Width = 121
-      Height = 21
-      NumbersOnly = True
-      TabOrder = 6
-      Text = '0'
-    end
-    object BrakeR: TEdit
-      Left = 64
-      Top = 240
-      Width = 121
-      Height = 21
-      NumbersOnly = True
-      TabOrder = 7
-      Text = '0'
-    end
-    object ScrollSteering: TScrollBar
-      Left = 64
-      Top = 316
-      Width = 121
-      Height = 17
-      Min = -100
-      PageSize = 0
-      TabOrder = 8
-      OnChange = ScrollSteeringChange
-    end
     object TS: TButton
       Left = 126
       Top = 478
       Width = 75
       Height = 25
       Caption = 'TS'
-      TabOrder = 9
+      TabOrder = 4
       OnClick = TSClick
     end
     object RTDM: TButton
@@ -245,7 +129,7 @@ object MainForm: TMainForm
       Width = 75
       Height = 25
       Caption = 'RTDM'
-      TabOrder = 10
+      TabOrder = 5
       OnClick = RTDMClick
     end
     object Start: TButton
@@ -254,17 +138,8 @@ object MainForm: TMainForm
       Width = 75
       Height = 25
       Caption = 'Start'
-      TabOrder = 11
+      TabOrder = 6
       OnClick = StartClick
-    end
-    object Steering: TMaskEdit
-      Left = 64
-      Top = 339
-      Width = 121
-      Height = 21
-      TabOrder = 12
-      Text = '0'
-      OnChange = SteeringChange
     end
     object SendADC: TCheckBox
       Left = 84
@@ -272,27 +147,8 @@ object MainForm: TMainForm
       Width = 97
       Height = 17
       Caption = 'SendADC'
-      TabOrder = 13
+      TabOrder = 7
       OnClick = SendADCClick
-    end
-    object DriveMode: TComboBox
-      Left = 64
-      Top = 366
-      Width = 121
-      Height = 21
-      Style = csDropDownList
-      ItemIndex = 0
-      TabOrder = 14
-      Text = '5'
-      Items.Strings = (
-        '5'
-        '10'
-        '15'
-        '20'
-        '25'
-        '30'
-        '45'
-        '65')
     end
     object Crash: TButton
       Left = 288
@@ -300,7 +156,7 @@ object MainForm: TMainForm
       Width = 75
       Height = 25
       Caption = 'Crash'
-      TabOrder = 15
+      TabOrder = 8
       OnClick = CrashClick
     end
     object Clear: TButton
@@ -309,7 +165,7 @@ object MainForm: TMainForm
       Width = 75
       Height = 25
       Caption = 'Clear'
-      TabOrder = 16
+      TabOrder = 9
       OnClick = ClearClick
     end
     object SendNMTWakeups: TButton
@@ -318,7 +174,7 @@ object MainForm: TMainForm
       Width = 99
       Height = 25
       Caption = 'NMT Wakeup'
-      TabOrder = 17
+      TabOrder = 10
       OnClick = SendNMTWakeupsClick
     end
     object Log: TCheckBox
@@ -329,7 +185,7 @@ object MainForm: TMainForm
       Caption = 'Log to file'
       Checked = True
       State = cbChecked
-      TabOrder = 18
+      TabOrder = 11
       OnClick = InvertersClick
     end
     object IVTprogramTrig: TButton
@@ -338,26 +194,8 @@ object MainForm: TMainForm
       Width = 99
       Height = 25
       Caption = 'Reconf IVT Trig'
-      TabOrder = 19
+      TabOrder = 12
       OnClick = IVTprograTrigClick
-    end
-    object Coolant1: TEdit
-      Left = 64
-      Top = 394
-      Width = 121
-      Height = 21
-      NumbersOnly = True
-      TabOrder = 20
-      Text = '20'
-    end
-    object Coolant2: TEdit
-      Left = 64
-      Top = 421
-      Width = 121
-      Height = 21
-      NumbersOnly = True
-      TabOrder = 21
-      Text = '20'
     end
     object IVTprogramCyc: TButton
       Left = 696
@@ -365,16 +203,16 @@ object MainForm: TMainForm
       Width = 99
       Height = 25
       Caption = 'Reconf IVT Cyc'
-      TabOrder = 22
+      TabOrder = 13
       OnClick = IVTprogramCycClick
     end
-    object GroupBox2: TGroupBox
-      Left = 263
+    object PDMGroup: TGroupBox
+      Left = 281
       Top = 509
       Width = 82
       Height = 120
-      Caption = 'Trigger Relay'
-      TabOrder = 23
+      Caption = 'PDM Flags'
+      TabOrder = 14
       object IMD: TCheckBox
         Left = 16
         Top = 47
@@ -402,24 +240,15 @@ object MainForm: TMainForm
         TabOrder = 2
         OnClick = BMSClick
       end
-    end
-    object AccelPedal: TScrollBar
-      Left = 64
-      Top = 190
-      Width = 121
-      Height = 17
-      PageSize = 0
-      TabOrder = 24
-      OnChange = AccelPedalChange
-    end
-    object BrakePedal: TScrollBar
-      Left = 64
-      Top = 267
-      Width = 121
-      Height = 17
-      PageSize = 0
-      TabOrder = 25
-      OnChange = BrakePedalChange
+      object ShutD: TCheckBox
+        Left = 16
+        Top = 94
+        Width = 97
+        Height = 17
+        Caption = 'ShutD'
+        TabOrder = 3
+        OnClick = BSPDClick
+      end
     end
     object ComboBox1: TComboBox
       Left = 432
@@ -427,7 +256,7 @@ object MainForm: TMainForm
       Width = 121
       Height = 21
       Style = csDropDownList
-      TabOrder = 26
+      TabOrder = 15
       Items.Strings = (
         '0'
         '1'
@@ -443,7 +272,7 @@ object MainForm: TMainForm
       Width = 74
       Height = 187
       Caption = 'LEDs'
-      TabOrder = 27
+      TabOrder = 16
       object RTDMLED: TCheckBox
         Left = 18
         Top = 71
@@ -501,7 +330,7 @@ object MainForm: TMainForm
       Width = 75
       Height = 25
       Caption = 'GetADC'
-      TabOrder = 28
+      TabOrder = 17
       OnClick = GetADCClick
     end
     object GetADCMinMax: TButton
@@ -510,7 +339,7 @@ object MainForm: TMainForm
       Width = 75
       Height = 25
       Caption = 'GetADC M/M'
-      TabOrder = 29
+      TabOrder = 18
       OnClick = GetADCMinMaxClick
     end
     object GroupBox4: TGroupBox
@@ -519,7 +348,7 @@ object MainForm: TMainForm
       Width = 233
       Height = 461
       Caption = 'State'
-      TabOrder = 30
+      TabOrder = 19
       object Label7: TLabel
         Left = 16
         Top = 24
@@ -899,13 +728,13 @@ object MainForm: TMainForm
         Caption = '-'
       end
     end
-    object GroupBox5: TGroupBox
+    object CanDeviceGroup: TGroupBox
       Left = 16
       Top = 509
-      Width = 241
+      Width = 249
       Height = 118
       Caption = 'Can Device '#39'Emulation'#39
-      TabOrder = 31
+      TabOrder = 20
       object Inverters: TCheckBox
         Left = 13
         Top = 24
@@ -936,7 +765,7 @@ object MainForm: TMainForm
       object FRSpeed: TCheckBox
         Left = 132
         Top = 47
-        Width = 97
+        Width = 114
         Height = 17
         Caption = 'Front Right Speed'
         TabOrder = 3
@@ -960,14 +789,14 @@ object MainForm: TMainForm
         TabOrder = 5
         OnClick = PedalsClick
       end
-      object Yaw: TCheckBox
+      object IMU: TCheckBox
         Left = 132
         Top = 70
         Width = 97
         Height = 17
-        Caption = 'Yaw'
+        Caption = 'IMU'
         TabOrder = 6
-        OnClick = YawClick
+        OnClick = IMUClick
       end
       object IVT: TCheckBox
         Left = 13
@@ -985,7 +814,7 @@ object MainForm: TMainForm
       Width = 66
       Height = 72
       Caption = 'PDM'
-      TabOrder = 32
+      TabOrder = 21
       object HV: TCheckBox
         Left = 16
         Top = 16
@@ -1009,7 +838,8 @@ object MainForm: TMainForm
       Width = 97
       Height = 17
       Caption = 'Emu Master'
-      TabOrder = 33
+      TabOrder = 22
+      OnClick = EmuMasterClick
     end
     object HVon: TCheckBox
       Left = 440
@@ -1017,7 +847,7 @@ object MainForm: TMainForm
       Width = 97
       Height = 17
       Caption = 'HV On'
-      TabOrder = 34
+      TabOrder = 23
     end
     object HVForce: TButton
       Left = 640
@@ -1025,7 +855,7 @@ object MainForm: TMainForm
       Width = 75
       Height = 25
       Caption = 'HV Toggle'
-      TabOrder = 35
+      TabOrder = 24
       OnClick = HVForceClick
     end
     object IVTCAN1: TCheckBox
@@ -1034,8 +864,182 @@ object MainForm: TMainForm
       Width = 97
       Height = 17
       Caption = 'IVT CAN1'
-      TabOrder = 36
+      TabOrder = 25
       OnClick = IVTClick
+    end
+    object ADCGroup: TGroupBox
+      Left = 3
+      Top = 143
+      Width = 200
+      Height = 324
+      Caption = 'ADCGroup'
+      TabOrder = 26
+      object Label6: TLabel
+        Left = 24
+        Top = 236
+        Width = 33
+        Height = 13
+        Caption = 'TempR'
+      end
+      object Label4: TLabel
+        Left = 26
+        Top = 263
+        Width = 31
+        Height = 13
+        Caption = 'TempL'
+      end
+      object LabelAccelL: TLabel
+        Left = 15
+        Top = 25
+        Width = 30
+        Height = 13
+        Caption = 'AccelL'
+      end
+      object LabelAccelR: TLabel
+        Left = 15
+        Top = 52
+        Width = 32
+        Height = 13
+        Caption = 'AccelR'
+      end
+      object LabelBrakeF: TLabel
+        Left = 15
+        Top = 102
+        Width = 33
+        Height = 13
+        Caption = 'BrakeF'
+      end
+      object LabelBrakeR: TLabel
+        Left = 15
+        Top = 129
+        Width = 34
+        Height = 13
+        Caption = 'BrakeR'
+      end
+      object LabelSteering: TLabel
+        Left = 15
+        Top = 179
+        Width = 40
+        Height = 13
+        Caption = 'Steering'
+      end
+      object Label9: TLabel
+        Left = 21
+        Top = 293
+        Width = 38
+        Height = 13
+        Caption = 'Max Nm'
+      end
+      object Coolant2: TEdit
+        Left = 63
+        Top = 233
+        Width = 121
+        Height = 21
+        NumbersOnly = True
+        TabOrder = 0
+        Text = '20'
+      end
+      object Coolant1: TEdit
+        Left = 63
+        Top = 260
+        Width = 121
+        Height = 21
+        NumbersOnly = True
+        TabOrder = 1
+        Text = '20'
+      end
+      object DriveMode: TComboBox
+        Left = 65
+        Top = 287
+        Width = 121
+        Height = 21
+        Style = csDropDownList
+        ItemIndex = 0
+        TabOrder = 2
+        Text = '5'
+        Items.Strings = (
+          '5'
+          '10'
+          '15'
+          '20'
+          '25'
+          '30'
+          '45'
+          '65')
+      end
+      object Steering: TMaskEdit
+        Left = 61
+        Top = 176
+        Width = 121
+        Height = 21
+        TabOrder = 3
+        Text = '0'
+        OnChange = SteeringChange
+      end
+      object ScrollSteering: TScrollBar
+        Left = 63
+        Top = 202
+        Width = 121
+        Height = 17
+        Min = -100
+        PageSize = 0
+        TabOrder = 4
+        OnChange = ScrollSteeringChange
+      end
+      object BrakePedal: TScrollBar
+        Left = 63
+        Top = 153
+        Width = 121
+        Height = 17
+        PageSize = 0
+        TabOrder = 5
+        OnChange = BrakePedalChange
+      end
+      object BrakeR: TEdit
+        Left = 63
+        Top = 126
+        Width = 121
+        Height = 21
+        NumbersOnly = True
+        TabOrder = 6
+        Text = '0'
+      end
+      object BrakeF: TEdit
+        Left = 63
+        Top = 99
+        Width = 121
+        Height = 21
+        NumbersOnly = True
+        TabOrder = 7
+        Text = '0'
+      end
+      object AccelPedal: TScrollBar
+        Left = 63
+        Top = 76
+        Width = 121
+        Height = 17
+        PageSize = 0
+        TabOrder = 8
+        OnChange = AccelPedalChange
+      end
+      object AccelR: TEdit
+        Left = 63
+        Top = 49
+        Width = 121
+        Height = 21
+        NumbersOnly = True
+        TabOrder = 9
+        Text = '0'
+      end
+      object AccelL: TEdit
+        Left = 63
+        Top = 22
+        Width = 121
+        Height = 21
+        NumbersOnly = True
+        TabOrder = 10
+        Text = '0'
+      end
     end
   end
   object timer200ms: TTimer

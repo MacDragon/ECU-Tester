@@ -2,6 +2,8 @@ unit CanTest;
 
 interface
 
+{$Define HPF20}
+
 uses
 //  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
 //  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CanChanEx, Vcl.ExtCtrls,
@@ -19,41 +21,22 @@ type
     Output: TListBox;
     GroupBox1: TGroupBox;
     CanDevices: TComboBox;
-    AccelL: TEdit;
-    AccelR: TEdit;
-    BrakeF: TEdit;
-    BrakeR: TEdit;
-    ScrollSteering: TScrollBar;
-    LabelAccelL: TLabel;
-    LabelAccelR: TLabel;
-    LabelBrakeF: TLabel;
-    LabelBrakeR: TLabel;
-    LabelSteering: TLabel;
     TS: TButton;
     RTDM: TButton;
     Start: TButton;
-    Steering: TMaskEdit;
     SendADC: TCheckBox;
     Label3: TLabel;
     TimeReceived: TLabel;
-    DriveMode: TComboBox;
     Crash: TButton;
     Clear: TButton;
     SendNMTWakeups: TButton;
     Log: TCheckBox;
     IVTprogramTrig: TButton;
-    Coolant1: TEdit;
-    Coolant2: TEdit;
-    Label4: TLabel;
-    Label6: TLabel;
-    Label9: TLabel;
     IVTprogramCyc: TButton;
-    GroupBox2: TGroupBox;
+    PDMGroup: TGroupBox;
     IMD: TCheckBox;
     BSPD: TCheckBox;
     BMS: TCheckBox;
-    AccelPedal: TScrollBar;
-    BrakePedal: TScrollBar;
     ComboBox1: TComboBox;
     GroupBox3: TGroupBox;
     RTDMLED: TCheckBox;
@@ -86,14 +69,14 @@ type
     TorqueRqLR: TLabel;
     TorqueRqRR: TLabel;
     OnBus: TLabel;
-    GroupBox5: TGroupBox;
+    CanDeviceGroup: TGroupBox;
     Inverters: TCheckBox;
     PDM: TCheckBox;
     FLSpeed: TCheckBox;
     FRSpeed: TCheckBox;
     CANBMS: TCheckBox;
     Pedals: TCheckBox;
-    Yaw: TCheckBox;
+    IMU: TCheckBox;
     IVT: TCheckBox;
     Label17: TLabel;
     Label18: TLabel;
@@ -136,14 +119,33 @@ type
     Label20: TLabel;
     InverterLStat: TLabel;
     InverterRStat: TLabel;
-    Label27: TLabel;
-    Label28: TLabel;
     InverterLInternal: TLabel;
     Label30: TLabel;
     SpeedFLR: TLabel;
     SpeedFRR: TLabel;
     HVForce: TButton;
     IVTCAN1: TCheckBox;
+    ShutD: TCheckBox;
+    ADCGroup: TGroupBox;
+    Coolant2: TEdit;
+    Label6: TLabel;
+    Label4: TLabel;
+    Coolant1: TEdit;
+    DriveMode: TComboBox;
+    Steering: TMaskEdit;
+    ScrollSteering: TScrollBar;
+    BrakePedal: TScrollBar;
+    BrakeR: TEdit;
+    BrakeF: TEdit;
+    AccelPedal: TScrollBar;
+    AccelR: TEdit;
+    AccelL: TEdit;
+    LabelAccelL: TLabel;
+    LabelAccelR: TLabel;
+    LabelBrakeF: TLabel;
+    LabelBrakeR: TLabel;
+    LabelSteering: TLabel;
+    Label9: TLabel;
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -165,7 +167,7 @@ type
     procedure PedalsClick(Sender: TObject);
     procedure CANBMSClick(Sender: TObject);
     procedure SendNMTWakeupsClick(Sender: TObject);
-    procedure YawClick(Sender: TObject);
+    procedure IMUClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure IVTprograTrigClick(Sender: TObject);
     procedure IVTClick(Sender: TObject);
@@ -182,6 +184,7 @@ type
     procedure SendADCClick(Sender: TObject);
     procedure timer100msTimer(Sender: TObject);
     procedure HVForceClick(Sender: TObject);
+    procedure EmuMasterClick(Sender: TObject);
   private
     { Private declarations }
     StartTime: TDateTime;
@@ -194,11 +197,14 @@ type
     InverterRStatus : Word;
     InverterRStatusRequest : Word;
     ErrorPos : Word;
+    Sanityfail : Boolean;
+    CANFail : Boolean;
     procedure CanChannel1CanRx(Sender: TObject);
     function InterPolateSteering(SteeringAngle : Integer) : Word;
     procedure sendIVT(msg0, msg1, msg2, msg3 : byte);
     procedure sendINVL;
     procedure sendINVR;
+    function CanSend(id: Longint; var msg; dlc, flags: Cardinal): integer;
   public
     { Public declarations }
     procedure PopulateList;
@@ -214,6 +220,7 @@ uses DateUtils, canlib;
 {$R *.dfm}
 
 const
+{$IfDef HPF19}
   PDMReceived = 0;
   BMSReceived = 1;
   InverterReceived	= 2;
@@ -223,6 +230,17 @@ const
   PedalADCReceived	= 5;
   IVTReceived = 6;
   InverterRReceived = 7;
+{$EndIf}
+
+{$IfDef HPF20}
+  PDMReceived = 6;
+  BMSReceived = 5;
+  Inverter1Received	= 0;
+  Inverter2Received	= 2;
+  PedalADCReceived	= 4;
+  IVTReceived = 8;
+ // InverterRReceived = 7;
+{$EndIf}
 
   BrakeFErrorBit = 0;
   BrakeRErrorBit = 1;
@@ -242,13 +260,31 @@ const
     badvalue : byte;
 
 
+function TMainForm.CanSend(id: Longint; var msg; dlc, flags: Cardinal): integer;
+var exception : Boolean;
+begin
+  exception := false;
+  with CanChannel1 do
+  begin
+    try
+      Check(Write(id, msg, dlc, flags), 'Write failed');
+    except
+      if not CANFail then
+        Output.Items.Add('Error Sending to CAN');
+      exception := true;
+      goOnBusClick(nil);
+    end;
+    if exception then CANFail := true else CANFail := false;
+  end;
+end;
+
 procedure TMainForm.StartClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
  msg[1] := 1;
   with CanChannel1 do begin
-    Check(Write($612, msg, 1 { sizeof(msg) }, 0), 'Write failed');
+    CanSend($612, msg, 1 { sizeof(msg) }, 0);
     Output.Items.Add('Sending Start');
   end;
 end;
@@ -299,14 +335,24 @@ procedure TMainForm.InvertersClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
+
   msg[0] := 0;
   msg[1] := 0;
   msg[2] := 0;
-  
-  with CanChannel1 do
+  if Inverters.Checked then
   begin
-    if Active then
+    with CanChannel1 do
     begin
+      if Active then
+      begin
+            CanSend($77E,msg,2,0);  // inverter NMT response
+            InverterLStatus := 64;
+            InverterRStatus := 64;
+            MainStatus := 0;
+            InverterLStat.Caption := IntToStr(InverterLStatus);
+            InverterRStat.Caption := IntToStr(InverterRStatus);
+            SendInverterClick(nil);
+      end;
     end;
   end;
 end;
@@ -348,13 +394,13 @@ begin
 
    //     if Random(100) > 50 then  msg[1] := 0;
 
-        Check(Write($2fe,msg,6,0), 'Write failed');
+        CanSend($2fe,msg,6,0);
 
         msg[1] := 22+badvalue;
 
                 badvalue := 0;
 
-        Check(Write($3fe,msg,4,0), 'Write failed');
+        CanSend($3fe,msg,4,0);
         InverterLStat.Caption := IntToStr(InverterLStatus);
       end;
 end;
@@ -389,11 +435,11 @@ begin
 
   //      if Random(100) > 50 then  msg[1] := 0;
 
-        Check(Write($2ff,msg,6,0), 'Write failed');
+        CanSend($2ff,msg,6,0);
 
         msg[1] := 22;
 
-        Check(Write($3ff,msg,4,0), 'Write failed');
+        CanSend($3ff,msg,4,0);
         InverterRStat.Caption := IntToStr(InverterRStatus);
       end;
 end;
@@ -408,7 +454,7 @@ begin
     msg[3] := msg3;
     Output.Items.Add('IVTSend('+IntToStr(msg[0] )+','+IntToStr(msg[1] )+','+
                             IntToStr(msg[2] )+','+  IntToStr(msg[3] )+')');
-    with CanChannel1 do Check(Write($411, msg, 8, 0), 'Write failed');
+    with CanChannel1 do CanSend($411, msg, 8, 0);
     Sleep(100);
 end;
 
@@ -416,50 +462,53 @@ procedure TMainForm.IVTClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
-  msg[0] := 0;  // insert an IVT value here.
-  msg[1] := 0;
-  msg[2] := 0;
-  msg[3] := 0;
-  msg[4] := 90;
-  msg[5] := 10;
-
-  with CanChannel1 do
+  if EmuMaster.checked then
   begin
-    if Active then
+    msg[0] := 0;  // insert an IVT value here.
+    msg[1] := 0;
+    msg[2] := 0;
+    msg[3] := 0;
+    msg[4] := 90;
+    msg[5] := 10;
+
+    with CanChannel1 do
     begin
-      if IVT.Checked then
+      if Active then
       begin
-
-        Check(Write($521,msg,6,0), 'Write failed');  // IVT
-        msg[0] := 1;  // insert an IVT value here.
-
-        if HVOn.checked then
+        if IVT.Checked then
         begin
-          msg[3] := 8;
-          msg[4] := 90;
-          msg[5] := 10;
-        end
-        else
-        begin
+
+          CanSend($521,msg,6,0);  // IVT
+          msg[0] := 1;  // insert an IVT value here.
+
+          if HVOn.checked then
+          begin
+            msg[3] := 8;
+            msg[4] := 90;
+            msg[5] := 10;
+          end
+          else
+          begin
+            msg[3] := 0;
+            msg[4] := 90;
+            msg[5] := 10;
+          end;
+
+          CanSend($522,msg,6,0);  // IVT
+          msg[0] := 2;  // insert an IVT value here.
+          CanSend($523,msg,6,0);  // IVT
+
           msg[3] := 0;
           msg[4] := 90;
           msg[5] := 10;
+
+          msg[0] := 5;  // insert an IVT value here.
+
+          CanSend($526,msg,6,0);  // IVT
+
+          msg[0] := 8;  // insert an IVT value here.
+          CanSend($528,msg,6,0);  // IVT
         end;
-
-        Check(Write($522,msg,6,0), 'Write failed');  // IVT
-        msg[0] := 2;  // insert an IVT value here.
-        Check(Write($523,msg,6,0), 'Write failed');  // IVT
-
-        msg[3] := 0;
-        msg[4] := 90;
-        msg[5] := 10;
-
-        msg[0] := 5;  // insert an IVT value here.
-
-        Check(Write($526,msg,6,0), 'Write failed');  // IVT
-
-        msg[0] := 8;  // insert an IVT value here.
-        Check(Write($528,msg,6,0), 'Write failed');  // IVT
       end;
     end;
   end;
@@ -567,26 +616,32 @@ procedure TMainForm.PDMClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
-  if BMS.checked then msg[0] := 1 else msg[0] := 0;
-  if IMD.checked then msg[1] := 1 else msg[1] := 0;
-  if BSPD.checked then msg[2] := 1 else msg[2] := 0;
-
-  msg[1] := msg[1];//+badvalue;
- // if badvalue>0 then badvalue := badvalue-1;
-  
-  msg[3] := 100;
-  msg[4] := 100;
-  msg[5] := 0;
-  msg[6] := 0;
-  msg[7] := 0;
-
-  with CanChannel1 do
+  if EmuMaster.checked then
   begin
-    if Active then
+    if BMS.checked then msg[0] := 1 else msg[0] := 0;
+    if IMD.checked then msg[1] := 1 else msg[1] := 0;
+    if BSPD.checked then msg[2] := 1 else msg[2] := 0;
+
+    if ShutD.checked then msg[6] := 0 else msg[6] := 1;
+
+
+    msg[1] := msg[1];//+badvalue;
+   // if badvalue>0 then badvalue := badvalue-1;
+  
+    msg[3] := 100;
+    msg[4] := 100;
+    msg[5] := 0;
+   // msg[6] := 0;
+    msg[7] := msg[6]; // checked to be equal.
+
+    with CanChannel1 do
     begin
-      if PDM.Checked then
+      if Active then
       begin
-        Check(Write($520,msg,8,0), 'Write failed');  // PDM
+        if PDM.Checked then
+        begin
+          CanSend($520,msg,8,0);  // PDM
+        end;
       end;
     end;
   end;
@@ -597,16 +652,19 @@ procedure TMainForm.PedalsClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
-  msg[0] := 0;
-  msg[1] := 0;
-  msg[2] := 0;
-  with CanChannel1 do
+  if EmuMaster.checked then
   begin
-    if Active then
+    msg[0] := 0;
+    msg[1] := 0;
+    msg[2] := 0;
+    with CanChannel1 do
     begin
-      if Pedals.Checked then
+      if Active then
       begin
-        SendCANADCClick(nil);
+        if Pedals.Checked then
+        begin
+          SendCANADCClick(nil);
+        end;
       end;
     end;
   end;
@@ -633,7 +691,7 @@ begin
  msg[1] := 1;
   with CanChannel1 do begin
     Output.Items.Add('Sending RTDM');
-    Check(Write($611, msg, 1 { sizeof(msg) }, 0), 'Write failed');
+    CanSend($611, msg, 1 { sizeof(msg) }, 0);
   end;
 end;
 
@@ -663,7 +721,7 @@ begin
       msg[0] := 0;
       msg[1] := 0; // if received value in ID is not 0 assume true and switch to fakeADC over CAN.
     end;
-    if Active then Check(Write($600,msg,2,0), 'Write failed');
+    if Active then CanSend($600,msg,2,0);
   end;
   SendCANADC.Enabled := SendADC.Checked;
 end;
@@ -688,7 +746,7 @@ begin
       msg[5] := DrivingModeValue[DriveMode.ItemIndex];
       msg[6] := StrToInt(Coolant1.Text);
       msg[7] := StrToInt(Coolant2.Text);
-      Check(Write(ADCID,msg,8,0), 'Write failed');
+      CanSend(ADCID,msg,8,0);
       end;
       //Output.Items.Add('ADCSent() : '+TimeToStr(System.SysUtils.Now));
     end;
@@ -696,45 +754,50 @@ end;
 
 procedure TMainForm.SendInverterClick(Sender: TObject);
 begin
-  sendINVL;
-  sendINVR;
+  if EmuMaster.checked then
+  begin
+    sendINVL;
+    sendINVR;
+  end;
 end;
 
 procedure TMainForm.SendNMTWakeupsClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
-  msg[0] := 0;
-  msg[1] := 0;
-  msg[2] := 0;
-
-  with CanChannel1 do
+  if EmuMaster.checked then
   begin
-    if Active then
-    begin
-      if Inverters.Checked then
-      begin
-        Check(Write($77E,msg,2,0), 'Write failed');  // inverter NMT response
-        InverterLStatus := 64;
-        InverterRStatus := 64;
-        MainStatus := 0;
-        InverterLStat.Caption := IntToStr(InverterLStatus);
-        InverterRStat.Caption := IntToStr(InverterRStatus);
+    msg[0] := 0;
+    msg[1] := 0;
+    msg[2] := 0;
 
-        SendInverterClick(nil);
+    with CanChannel1 do
+    begin
+      if Active then
+      begin
+        if Inverters.Checked then
+        begin
+          CanSend($77E,msg,2,0);  // inverter NMT response
+          InverterLStatus := 64;
+          InverterRStatus := 64;
+          MainStatus := 0;
+          InverterLStat.Caption := IntToStr(InverterLStatus);
+          InverterRStat.Caption := IntToStr(InverterRStatus);
+          SendInverterClick(nil);
+        end;
       end;
     end;
-  end;
-//  CANBMSClick(nil);
-//  InvertersClick(nil);
-//  FLSpeedClick(nil);
-//  FRSpeedClick(nil);
-//  PDMClick(nil);               now on timer.
+  //  CANBMSClick(nil);
+  //  InvertersClick(nil);
+  //  FLSpeedClick(nil);
+  //  FRSpeedClick(nil);
+  //  PDMClick(nil);               now on timer.
 
-  if Pedals.Checked then
-  begin
-  //  PedalsClick(nil);
-    // Check(CanChannel1.Write($520,msg,3,0), 'Write failed');  // PDM response
+    if Pedals.Checked then
+    begin
+    //  PedalsClick(nil);
+      // Check(CanChannel1.Write($520,msg,3,0);  // PDM response
+    end;
   end;
 end;
 
@@ -765,7 +828,7 @@ begin
     msg[5] := 1;
     with CanChannel1 do begin
       if Active then
-      Check(Write($521, msg, 6 { sizeof(msg) }, 0), 'Write failed');
+      CanSend($521, msg, 6 { sizeof(msg) }, 0);
     end;
         msg[0] := 1;
         msg[4] := $50;
@@ -773,12 +836,12 @@ begin
 
     with CanChannel1 do begin
       if Active then
-      Check(Write($522, msg, 6 { sizeof(msg) }, 0), 'Write failed');
+      CanSend($522, msg, 6 { sizeof(msg) }, 0);
     end;
         msg[0] := 2;
     with CanChannel1 do begin
       if Active then
-      Check(Write($523, msg, 6 { sizeof(msg) }, 0), 'Write failed');
+      CanSend($523, msg, 6 { sizeof(msg) }, 0);
     end;
 
   end;
@@ -808,24 +871,29 @@ begin
  msg[1] := 1;
   with CanChannel1 do begin
     Output.Items.Add('Sending TS');
-    Check(Write($610, msg, 1 { sizeof(msg) }, 0), 'Write failed');
+    CanSend($610, msg, 1 { sizeof(msg) }, 0);
   end;
 end;
 
-procedure TMainForm.YawClick(Sender: TObject);
+procedure TMainForm.IMUClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
-begin  msg[0] := 0;
-  msg[1] := 0;
-  msg[2] := 0;
-
-  with CanChannel1 do
+begin
+  if EmuMaster.checked then
   begin
-    if Active then
+    msg[0] := 0;
+
+    msg[1] := 0;
+    msg[2] := 0;
+
+    with CanChannel1 do
     begin
-      if PDM.Checked then
+      if Active then
       begin
-        Check(Write($772,msg,3,0), 'Write failed');  // inverter NMT response
+        if PDM.Checked then
+        begin
+          CanSend($772,msg,3,0);  // inverter NMT response
+        end;
       end;
     end;
   end;
@@ -833,13 +901,15 @@ end;
 
 procedure TMainForm.goOnBusClick(Sender: TObject);
 var
-  msg: array[0..7] of byte;
   formattedDateTime : String;
 begin
   with CanChannel1 do begin
     if not Active then begin
       Bitrate := canBITRATE_1M;
       Channel := CanDevices.ItemIndex;
+      //  TCanChanOption = (ccNotExclusive, ccNoVirtual, ccAcceptLargeDLC);
+      //  TCanChanOptions = set of TCanChanOption;
+      Options := [ccNotExclusive];
       Open;
     //  SetHardwareFilters($20, canFILTER_SET_CODE_STD);
     //  SetHardwareFilters($FE, canFILTER_SET_MASK_STD);
@@ -883,7 +953,11 @@ begin
         CloseFile(adcdata);
         logOpen := false;
       end;
-      BusActive := false;
+      try
+        BusActive := false;
+      except
+
+      end;
       onBus.Caption := 'Off bus';
       goOnBus.Caption := 'Go on bus';
       CanDevices.Enabled := true;
@@ -921,11 +995,25 @@ begin
     begin
       if FLSpeed.Checked then
       begin
-        Check(Write($613,msg,3,0), 'Write failed');
+        CanSend($613,msg,3,0);
       end;
     end;
   end;
 
+end;
+
+procedure TMainForm.EmuMasterClick(Sender: TObject);
+begin
+  if EmuMaster.Checked then
+  begin
+    CanDeviceGroup.Visible := true;
+    PDMGroup.Visible := true;
+  end
+  else
+  begin
+    CanDeviceGroup.Visible := false;
+    PDMGroup.Visible := false;
+  end;
 end;
 
 procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -951,8 +1039,16 @@ end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
-  CanChannel1 := TCanChannelEx.Create(Self);
+  try
+    CanChannel1 := TCanChannelEx.Create(Self);
+  except
+     ShowMessage('Error initialisiting, are KVASER drivers installed?');
+     Application.Terminate();
+  end;
+  EmuMasterClick(nil);
   CanChannel1.Channel := 0;
+  Sanityfail := false;
+  CANFail := false;
   Output.clear;
 end;
 
@@ -971,17 +1067,20 @@ procedure TMainForm.FLSpeedClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
-  msg[0] := 0;
-  msg[1] := 0;
-  msg[2] := 0;
-
-  with CanChannel1 do
+  if EmuMaster.checked then
   begin
-    if Active then
+    msg[0] := 0;
+    msg[1] := 0;
+    msg[2] := 0;
+
+    with CanChannel1 do
     begin
-      if FLSpeed.Checked then
+      if Active then
       begin
-        Check(Write($770,msg,3,0), 'Write failed');
+        if FLSpeed.Checked then
+        begin
+          CanSend($770,msg,3,0);
+        end;
       end;
     end;
   end;
@@ -991,17 +1090,20 @@ procedure TMainForm.FRSpeedClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
-  msg[0] := 0;
-  msg[1] := 0;
-  msg[2] := 0;
-
-  with CanChannel1 do
+  if EmuMaster.checked then
   begin
-    if Active then
+    msg[0] := 0;
+    msg[1] := 0;
+    msg[2] := 0;
+
+    with CanChannel1 do
     begin
-      if FRSpeed.Checked then
+      if Active then
       begin
-        Check(Write($771,msg,3,0), 'Write failed');
+        if FRSpeed.Checked then
+        begin
+          CanSend($771,msg,3,0);
+        end;
       end;
     end;
   end;
@@ -1018,7 +1120,7 @@ begin  msg[0] := 1;
   begin
     if Active then
     begin
-        Check(Write($21,msg,3,0), 'Write failed');
+        CanSend($21,msg,3,0);
     end;
   end;
 end;
@@ -1035,7 +1137,7 @@ begin
   begin
     if Active then
     begin
-        Check(Write($21,msg,3,0), 'Write failed');
+        CanSend($21,msg,3,0);
 
     end;
   end;
@@ -1068,7 +1170,7 @@ begin
     begin
       if MainStatus = 1 then  // only send request if in startup state.
       begin
-        Check(Write($21,msg,8,0), 'Write failed');
+        CanSend($21,msg,8,0);
       end;
     end;
   end;
@@ -1078,25 +1180,28 @@ procedure TMainForm.CANBMSClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
-  msg[0] := 0;//+badvalue;
-  if badvalue > 0 then badvalue := badvalue-1;
-  msg[1] := 0;
-  msg[2] := 2;
-  msg[3] := 48;
-  msg[4] := 0;
-  msg[5] := 0;
-  msg[6] := 0;
-  msg[7] := 0;
-  // 		uint16_t voltage = CanState.BMSVolt.data[2]*256+CanState.BMSVolt.data[3];
-
-	//	if ( CanState.BMSVolt.dlcsize == 8 &&  voltage > 480 && voltage < 600 ) // check data sanity
-  with CanChannel1 do
+  if EmuMaster.checked then
   begin
-    if Active then
+    msg[0] := 0;//+badvalue;
+    if badvalue > 0 then badvalue := badvalue-1;
+    msg[1] := 0;
+    msg[2] := 2;
+    msg[3] := 48;
+    msg[4] := 0;
+    msg[5] := 0;
+    msg[6] := $AB;
+    msg[7] := $CD;
+    // 		uint16_t voltage = CanState.BMSVolt.data[2]*256+CanState.BMSVolt.data[3];
+
+    //	if ( CanState.BMSVolt.dlcsize == 8 &&  voltage > 480 && voltage < 600 ) // check data sanity
+    with CanChannel1 do
     begin
-      if CANBMS.Checked then
+      if Active then
       begin
-        Check(Write($B,msg,8,0), 'Write failed');
+        if CANBMS.Checked then
+        begin
+          CanSend($B,msg,8,0);
+        end;
       end;
     end;
   end;
@@ -1221,8 +1326,11 @@ begin
                    WriteLn(adcdata, 'AccelRRRawError '+IntToStr(msg[3]*256+msg[2]));
                    WriteLn(adcdata, 'BrakeFRRawError '+IntToStr(msg[5]*256+msg[4]));
                    WriteLn(adcdata, 'BrakeRRRawError '+IntToStr(msg[7]*256+msg[6]));   }
-                   Output.Items.Add('ADCSanityError()');
-
+                //   if not Sanityfail then
+                   begin
+                      Output.Items.Add('ADCSanityError()');
+                      Sanityfail := true;
+                   end;
              {      Output.Items.Add('AccelLRRawError '+IntToStr(msg[1]*256+msg[0]));
                    Output.Items.Add('AccelRRRawError '+IntToStr(msg[3]*256+msg[2]));
                    Output.Items.Add('BrakeFRRawError '+IntToStr(msg[5]*256+msg[4]));
@@ -1291,10 +1399,20 @@ begin
                            case msg[1] of
                               PDMReceived, PDMReceived+100, PDMReceived+200 : str := str + 'PDM';
                               BMSReceived, BMSReceived+100, BMSReceived+200 : str := str + 'BMS';
+                              {$IfDef HPF19}
                               InverterLReceived, InverterLReceived+100, InverterLReceived+200: str := str + 'INVL';
                               InverterRReceived, InverterRReceived+100, InverterRReceived+200: str := str + 'INVR';
+                              {$EndIf}
+
+                              {$IfDef HPF20}
+                              Inverter1Received, Inverter1Received+100, Inverter1Received+200: str := str + 'INV1';
+                              Inverter2Received, Inverter2Received+100, Inverter2Received+200: str := str + 'INV2';
+                              {$EndIf}
+
+                              {$IfDef HPF19}
                               FLeftSpeedReceived, FLeftSpeedReceived+100, FLeftSpeedReceived+200 : str := str + 'FLS';
                               FRightSpeedReceived, FRightSpeedReceived+100, FRightSpeedReceived+200 : str := str + 'FRS';
+                              {$EndIf}
                               PedalADCReceived, PedalADCReceived+100, PedalADCReceived+200 : str := str + 'ADC';
                               IVTReceived+110, IVTReceived+210  : str := str + 'IVTI';
                               IVTReceived+111, IVTReceived+211  : str := str + 'IVTU1';
@@ -1331,13 +1449,14 @@ begin
                         if status and (1 shl PDMReceived) <> 0 then str := str + 'PDM ';
                         if status and (1 shl BMSReceived) <> 0 then str := str + 'BMS ';
 
-                        if status and (1 shl InverterReceived) <> 0 then
+                        if status and (1 shl Inverter1Received) <> 0 then
                           if msg[1] = 1 then str := str + 'INV ' else str := str + 'INVL ';
 
-                        if status and (1 shl InverterRReceived) <> 0 then str := str + 'INVR ';
-
+                        if status and (1 shl Inverter2Received) <> 0 then str := str + 'INVR ';
+                        {$IfDef HPF19}
                         if status and (1 shl FLeftSpeedReceived) <> 0 then str := str + 'FLS ';
                         if status and (1 shl FRightSpeedReceived) <> 0 then str := str + 'FRS ';
+                        {$EndIf}
                         if status and (1 shl PedalADCReceived) <> 0 then str := str + 'ADC ';
                         if status and (1 shl IVTReceived) <> 0 then str := str + 'IVT ';
 
@@ -1490,7 +1609,7 @@ begin
 
                       msgout[0] := 127;
                    //   msgout[1] := byte(500);
-                      Check(CanChannel1.Write($1f0,msgout,8,0), 'Write failed');
+                      CanSend($1f0,msgout,8,0);
                    end;
 
                    if FRSpeed.Checked then
@@ -1500,7 +1619,7 @@ begin
 
                       msgout[0] := 127;
                  //     msgout[1] := byte(500);
-                      Check(CanChannel1.Write($1f1,msgout,8,0), 'Write failed');
+                      CanSend($1f1,msgout,8,0);
                    end;
 
             {       if IVT.Checked then
@@ -1509,11 +1628,11 @@ begin
                       msgout[i] := 0;
 
                       msgout[0] := 100;
-                      Check(CanChannel1.Write($521,msgout,6,0), 'Write failed');
+                      Check(CanChannel1.Write($521,msgout,6,0);
 
                       msgout[4] := 5000 shr 8;
                       msgout[5] := 5000 div 256;
-                      Check(CanChannel1.Write($523,msgout,6,0), 'Write failed');
+                      Check(CanChannel1.Write($523,msgout,6,0);
                    end;  }
 
 
@@ -1529,21 +1648,22 @@ begin
                    msgout[1] := 0;
                    msgout[2] := 0;
 
-                   if ( msg[0] = $81 ) or ( msg[0] = $0 ) then       // reset
+                   if ( msg[0] = $81 ) or ( msg[0] = $82 ) or ( msg[0] = $0 ) then       // reset
                    begin
                       if msg[0] = $81 then SendNMTWakeupsClick(nil);
-                      
+                      if msg[0] = $82 then SendNMTWakeupsClick(nil);
+
                       SendADCClick(nil);
 
                       if SendADC.checked then
                        begin
                           msg[0] := 1;
-                          Check(Write($600, msg, 1, 0), 'Write failed'); // tell ECU to use can 'ADC' values for testing.
+                          CanSend($600, msg, 1, 0); // tell ECU to use can 'ADC' values for testing.
                        end
                        else
                        begin
                           msg[0] := 0;
-                          Check(Write($600, msg, 1, 0), 'Write failed'); // tell ECU to not use can 'ADC' values for testing.
+                          CanSend($600, msg, 1, 0); // tell ECU to not use can 'ADC' values for testing.
                        end;
 
                      if (msg[1] = 0) or ( msg[1] = 129 ) and CANBMS.checked then
@@ -1574,7 +1694,7 @@ begin
                      if (msg[1] = 0) or ( msg[1] = 0 ) and Pedals.Checked then
                      begin
                       //  PedalsClick(nil);
-                        // Check(CanChannel1.Write($520,msg,3,0), 'Write failed');  // PDM response
+                        // Check(CanChannel1.Write($520,msg,3,0);  // PDM response
                      end;
 
                    end;
