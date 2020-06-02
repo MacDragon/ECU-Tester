@@ -1043,7 +1043,7 @@ object MainForm: TMainForm
     end
     object SendConfig: TButton
       Left = 620
-      Top = 392
+      Top = 378
       Width = 75
       Height = 25
       Caption = 'Send Config'
@@ -1052,12 +1052,21 @@ object MainForm: TMainForm
     end
     object GetConfig: TButton
       Left = 620
-      Top = 428
+      Top = 409
       Width = 75
       Height = 25
       Caption = 'Get Config'
       TabOrder = 28
       OnClick = GetConfigClick
+    end
+    object testeepromwrite: TButton
+      Left = 620
+      Top = 440
+      Width = 75
+      Height = 25
+      Caption = 'EEPROM Wri'
+      TabOrder = 29
+      OnClick = testeepromwriteClick
     end
   end
   object timer200ms: TTimer

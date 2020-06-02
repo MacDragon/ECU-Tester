@@ -148,6 +148,7 @@ type
     Label9: TLabel;
     SendConfig: TButton;
     GetConfig: TButton;
+    testeepromwrite: TButton;
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -189,6 +190,7 @@ type
     procedure EmuMasterClick(Sender: TObject);
     procedure SendConfigClick(Sender: TObject);
     procedure GetConfigClick(Sender: TObject);
+    procedure testeepromwriteClick(Sender: TObject);
   private
     { Private declarations }
     StartTime: TDateTime;
@@ -1079,7 +1081,7 @@ begin
         begin
           if SendPos = -1 then
           begin
-            for I := 0 to 4095 do SendBuffer[I] := I;
+      //      for I := 0 to 4095 do SendBuffer[I] := I;
             msg[0] := 8;
 
             msg[1] := byte(4096 shr 8);
@@ -1486,6 +1488,23 @@ end;
 procedure TMainForm.BSPDClick(Sender: TObject);
 begin
  // PDMClick(nil);
+end;
+
+procedure TMainForm.testeepromwriteClick(Sender: TObject);
+var
+  msg: array[0..7] of byte;
+begin
+  msg[0] := 11;
+  with CanChannel1 do
+  begin
+    if Active then
+    begin
+      if MainStatus = 1 then  // only send request if in startup state.
+      begin
+        CanSend($21,msg,3,0);
+      end;
+    end;
+  end;
 end;
 
 procedure TMainForm.HVForceClick(Sender: TObject);
