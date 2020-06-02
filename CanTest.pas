@@ -10,7 +10,7 @@ uses
 //  Vcl.Mask;
   Windows, Messages, SysUtils, Variants, Classes, Graphics,
   Controls, Forms, Dialogs, StdCtrls, CanChanEx, ExtCtrls,
-  Mask;
+  Mask, System.Diagnostics;
 
 
 type
@@ -146,6 +146,8 @@ type
     LabelBrakeR: TLabel;
     LabelSteering: TLabel;
     Label9: TLabel;
+    SendConfig: TButton;
+    GetConfig: TButton;
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -185,6 +187,8 @@ type
     procedure timer100msTimer(Sender: TObject);
     procedure HVForceClick(Sender: TObject);
     procedure EmuMasterClick(Sender: TObject);
+    procedure SendConfigClick(Sender: TObject);
+    procedure GetConfigClick(Sender: TObject);
   private
     { Private declarations }
     StartTime: TDateTime;
@@ -199,11 +203,23 @@ type
     ErrorPos : Word;
     Sanityfail : Boolean;
     CANFail : Boolean;
+    ACKReceived : Boolean;
+    SendData : Boolean;
+    ReceiveData : Boolean;
+
+    SendPos : Integer;
+    SendTime : TStopwatch;
+    SendBuffer: array[0..4095] of byte;
+    ReceiveSize : Integer;
+    procedure SendNextData;
+    procedure SendDataAck(code: byte);
+    procedure ReceiveNextData(var data : array of byte );
     procedure CanChannel1CanRx(Sender: TObject);
     function InterPolateSteering(SteeringAngle : Integer) : Word;
     procedure sendIVT(msg0, msg1, msg2, msg3 : byte);
     procedure sendINVL;
     procedure sendINVR;
+
     function CanSend(id: Longint; var msg; dlc, flags: Cardinal): integer;
   public
     { Public declarations }
@@ -276,6 +292,7 @@ begin
     end;
     if exception then CANFail := true else CANFail := false;
   end;
+  result := 0;
 end;
 
 procedure TMainForm.StartClick(Sender: TObject);
@@ -506,7 +523,7 @@ begin
 
           CanSend($526,msg,6,0);  // IVT
 
-          msg[0] := 8;  // insert an IVT value here.
+          msg[0] := 7;  // insert an IVT value here.
           CanSend($528,msg,6,0);  // IVT
         end;
       end;
@@ -515,9 +532,10 @@ begin
 end;
 
 procedure TMainForm.IVTprogramCycClick(Sender: TObject);
-var
+{var
   msg: array[0..7] of byte;
   formattedDateTime : String;
+  }
 begin
   with CanChannel1 do begin
     if not Active then begin
@@ -559,9 +577,10 @@ begin
 end;
 
 procedure TMainForm.IVTprograTrigClick(Sender: TObject);
-var
+{var
   msg: array[0..7] of byte;
   formattedDateTime : String;
+}
 begin
   with CanChannel1 do begin
     if not Active then begin
@@ -677,8 +696,11 @@ var
 begin
   SetLength(p, 64);
   CanDevices.Items.clear;
-  for i := 0 to CanChannel1.ChannelCount - 1 do begin
-     CanDevices.Items.Add(CanChannel1.ChannelNames[i]);
+  CanChannel1.Options := [ccNoVirtual];
+  for i := 0 to CanChannel1.ChannelCount - 1 do
+  begin
+    if ansipos('Virtual', CanChannel1.ChannelNames[i]) = 0 then  // don't populate virtual channels.
+      CanDevices.Items.Add(CanChannel1.ChannelNames[i]);
   end;
   if CanDevices.Items.Count > 0 then
     CanDevices.ItemIndex := 0;
@@ -736,7 +758,7 @@ const
   DrivingModeValue : array[0..7] of word = ( 5, 10,15,20,25,30,45, 65 );
 begin
   with CanChannel1 do begin
-    if SendADC.checked then  // send our 'fake' adc data from form input.
+    if Boolean ( SendADC.checked ) then  // send our 'fake' adc data from form input.
     begin
       msg[0] := StrToInt(Steering.Text);
       msg[1] := StrToInt(AccelL.Text);
@@ -750,6 +772,61 @@ begin
       end;
       //Output.Items.Add('ADCSent() : '+TimeToStr(System.SysUtils.Now));
     end;
+end;
+
+procedure TMainForm.SendConfigClick(Sender: TObject);
+var
+  openDialog : topendialog;    // Open dialog variable
+  F: TFileStream;
+begin
+
+  if ( MainStatus = 1) and ( not SendData ) then
+  begin
+
+    // Create the open dialog object - assign to our open dialog variable
+    openDialog := TOpenDialog.Create(self);
+
+    // Set up the starting directory to be the current one
+    openDialog.InitialDir := GetCurrentDir;
+
+    // Only allow existing files to be selected
+    openDialog.Options := [ofFileMustExist];
+
+    // Allow only .dpr and .pas files to be selected
+    openDialog.Filter :=
+      'ECU EEPROM Datafile|*.dat';
+
+    // Select pascal files as the starting filter type
+    openDialog.FilterIndex := 1;
+
+    // Display the open file dialog
+    if openDialog.Execute
+    then
+    begin
+      openDialog.FileName;
+
+      F := TFileStream.Create(openDialog.FileName, fmOpenRead);
+
+      if F.Size = 4096 then
+      begin
+        F.Read(SendBuffer, 4096);
+      end;
+
+      F.Free;
+
+      SendConfig.Enabled := false;
+      GetConfig.Enabled := false;
+      Output.Items.Add('Sending EEPROM Data.');
+      SendData := true;
+      SendPos := -1;
+      SendNextData;
+
+    end
+    else ShowMessage('Open file was cancelled');
+
+    // Free up the dialog
+    openDialog.Free;
+  end;
 end;
 
 procedure TMainForm.SendInverterClick(Sender: TObject);
@@ -811,6 +888,33 @@ procedure TMainForm.timer100msTimer(Sender: TObject);
 var
   msg: array[0..5] of byte;
 begin
+
+  if SendData then  // ensure timeout runs
+  begin
+     if SendTime.ElapsedMilliseconds > 1000  then
+      begin
+        // timeout
+        SendData := false;
+        SendPos := -1;
+        SendConfig.Enabled := true;
+        GetConfig.Enabled := true;
+        Output.Items.Add('Send Timeout');
+      end;
+  end;
+
+  if ReceiveData then  // ensure timeout runs
+  begin
+     if SendTime.ElapsedMilliseconds > 1000  then
+      begin
+        // timeout
+        ReceiveData := false;
+        SendPos := -1;
+        SendConfig.Enabled := true;
+        GetConfig.Enabled := true;
+        Output.Items.Add('Receive Timeout');
+      end;
+  end;
+
   if EmuMaster.checked then
   begin
         InverterRStat.Caption := IntToStr(InverterRStatus);
@@ -847,11 +951,205 @@ begin
   end;
 end;
 
+procedure TMainForm.SendDataAck(code: byte);
+var
+  msg: array[0..7] of byte;
+begin
+        msg[0] := 30; // send err
+        msg[1] := code;
+        CanSend($21,msg,3,0);
+end;
+
+procedure TMainForm.ReceiveNextData( var data: array of byte );
+var
+  receivepos : integer;
+  msg: array[0..7] of byte;
+  F: TFileStream;
+  saveDialog : tsavedialog;    // Save dialog variable
+begin
+
+		 receivepos := data[1]*256+data[2];
+			// check receive buffer address matches sending position
+			if ( receivepos <> SendPos ) then
+      begin
+				// unexpected data sequence, reset receive status;
+
+		//		resetReceive();
+				Output.Items.add('Receive OutSeq.');
+        SendDataAck(99);
+			 //	CAN_SendStatus(ReceivingData,ReceiveErr,0);
+			end else // position good, continue.
+			begin
+
+				if SendPos+data[3]<=4096 then
+				begin
+
+          move(data[4], SendBuffer[SendPos], data[3]);
+
+					if (data[3] < 4) then // data received ok, but wasn't full block. end of data.
+					begin
+            Inc(Sendpos, data[3]);
+            SendDataAck(1);
+					end else
+					begin
+            Inc(Sendpos, 4);
+            SendDataAck(1);
+					end;
+
+          if (data[3] = 0 ) then
+          begin
+						ReceiveData := false;
+            GetConfig.Enabled := true;
+            SendConfig.Enabled := true;
+						Output.Items.Add('Receive Done.');
+
+
+            // Create the save dialog object - assign to our save dialog variable
+            saveDialog := TSaveDialog.Create(self);
+
+            // Give the dialog a title
+            saveDialog.Title := 'Save ECU Config data.';
+
+            // Set up the starting directory to be the current one
+            saveDialog.InitialDir := GetCurrentDir;
+
+            // Allow only .txt and .doc file types to be saved
+            saveDialog.Filter := 'ECU EEPROM Datafile|*.dat';
+
+            saveDialog.FileName := 'ECUEEPROM.dat';
+
+            // Set the default extension
+            saveDialog.DefaultExt := 'dat';
+
+            // Select text files as the starting filter type
+            saveDialog.FilterIndex := 1;
+
+            // Display the open file dialog
+            if saveDialog.Execute
+            then
+            begin
+
+              saveDialog.FileName;
+              try
+                F := TFileStream.Create(saveDialog.FileName, fmCreate);
+
+                if F.Size = 0 then
+                begin
+                  F.Write(SendBuffer, 4096);
+                end;
+                Output.Items.Add('File saved.');
+
+              except
+                Output.Items.Add('Error writing file');
+              end;
+              F.Free;
+            end;
+          //  else ShowMessage('Save file was cancelled');
+
+            // Free up the dialog
+            saveDialog.Free;
+
+
+          end;
+
+				end else
+				begin
+					// TODO tried to receive too much data! error.
+		 //			resetReceive();
+     //		lcd_send_stringpos(3,0,"Receive Error.    ");
+		 //			CAN_SendStatus(ReceivingData, ReceiveErr,0);
+          msg[0] := 30; // send err
+          msg[1] := 99;
+          CanSend($21,msg,3,0);
+          Output.Items.add('Receive Err.');
+				end
+			end;
+end;
+
+procedure TMainForm.SendNextData;
+var
+  msg: array[0..7] of byte;
+  I : integer;
+begin
+  with CanChannel1 do
+    begin
+      if Active then
+      begin
+        if SendData then  // if request to send data activated.
+        begin
+          if SendPos = -1 then
+          begin
+            for I := 0 to 4095 do SendBuffer[I] := I;
+            msg[0] := 8;
+
+            msg[1] := byte(4096 shr 8);
+            msg[2] := byte(4096);
+
+            SendPos := 0;
+
+            CanSend($21,msg,3,0);  // send start of transfer.
+            SendTime := TStopwatch.StartNew;
+          end else
+          begin
+          if ACKReceived then //and ( SendTime.ElapsedMilliseconds > 100 ) then
+            begin
+              ACKReceived := false;
+              if sendpos < 4095 then // not yet at end
+              begin
+
+                msg[0] := 9; // sending byte.
+
+
+                msg[1] := byte(sendpos shr 8);
+                msg[2] := byte(sendpos);
+
+            //    if sendpos=32 then sendpos:=33;
+
+                msg[3] := 4;
+
+                msg[4] := SendBuffer[sendpos];
+                msg[5] := SendBuffer[sendpos+1];
+                msg[6] := SendBuffer[sendpos+2];
+                msg[7] := SendBuffer[sendpos+3];
+                sendpos := sendpos+4;
+
+                CanSend($21,msg,8,0);
+
+  //              Sleep(100);
+              end else
+              if sendpos >= 4096 then
+              begin
+                sendpos := 4096;
+                msg[1] := byte(sendpos shr 8);
+                msg[2] := byte(sendpos);
+
+                for I := 3 to 7 do msg[I] := 0;
+
+                CanSend($21,msg,8,0);
+                SendData := false;
+                SendConfig.Enabled := true;
+                GetConfig.Enabled := true;
+                Output.Items.Add('Send Done');
+
+              end;
+
+            end;
+          end;
+
+      end;
+    end;
+
+  end;
+end;
+
+
 procedure TMainForm.timer10msTimer(Sender: TObject);
+
 begin
 //  PDMClick(nil);
 //  IVTClick(nil);
 //  CANBMSClick(nil);
+ // SendNextData;
 end;
 
 procedure TMainForm.timer200msTimer(Sender: TObject);
@@ -1049,6 +1347,8 @@ begin
   CanChannel1.Channel := 0;
   Sanityfail := false;
   CANFail := false;
+  SendData := false;
+  ACKReceived := false;
   Output.clear;
 end;
 
@@ -1112,7 +1412,8 @@ end;
 procedure TMainForm.GetADCClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
-begin  msg[0] := 1;
+begin
+  msg[0] := 1;
   msg[1] := 0;
   msg[2] := 0;
 
@@ -1141,6 +1442,34 @@ begin
 
     end;
   end;
+end;
+
+procedure TMainForm.GetConfigClick(Sender: TObject);
+var
+  msg: array[0..7] of byte;
+begin
+
+  with CanChannel1 do
+  begin
+    if Active then
+    begin
+      if ( MainStatus = 1) and ( not SendData ) then  // only send request if in startup state.
+      begin
+
+        msg[0] := 10;
+        msg[1] := 1; // specify EEPROM
+
+        GetConfig.Enabled := false;
+        SendConfig.Enabled := false;
+        Output.Items.Add('Getting EEPROM Data.');
+        ReceiveData := true;
+        SendPos := 0;
+        CanSend($21,msg,8,0);
+        SendTime := TStopwatch.StartNew;
+      end;
+    end;
+  end;
+
 end;
 
 procedure TMainForm.AccelPedalChange(Sender: TObject);
@@ -1350,6 +1679,28 @@ begin
                     Output.Items.Add('TempRRRaw '+IntToStr(msg[7]*256+msg[6]));     }
                  end;
 
+          $21 : begin     // data receive
+                  if ReceiveData then
+                  begin
+                    if msg[0] = 8 then  // receive data.
+                    begin
+                      ReceiveSize := msg[1]*256+msg[2];
+                      SendPos := 0;
+                      SendDataAck(1);
+                      Output.Items.Add('StartReceive('+inttostr(Receivesize)+')');
+                      SendTime := TStopwatch.StartNew;
+                    end;
+
+                    if msg[0] = 9 then  // receive data.
+                    begin
+           //            Output.Items.Add('RCV block');;
+                       ReceiveNextData(msg);
+                       SendTime.Reset;
+                       SendTime.Start;
+                    end;
+                  end;
+          end;
+
           $20 :  begin
                     if msg[0] = 20 then
                     begin
@@ -1375,6 +1726,26 @@ begin
                       case msg[1] of
                         3 :  Output.Items.Add('HVOn('+IntToStr(msg[2])+') : '+formattedDateTime);
                       end;
+                    end
+                    else if ( msg[0] = 30 ) then
+                    begin
+                        // message sending
+                        if msg[1] = 1 then
+                        begin
+                    //      Output.Items.Add('DataAck');
+                          ACKReceived := true;
+                          SendTime.Reset;
+                          SendTime.Start;
+                          SendNextData;
+                        end else if msg[1] = 99 then
+                        begin
+                          Output.Items.Add('DataErr!');
+                          ACKReceived := false;
+                          SendData := false;
+                          SendTime.Stop;
+                          SendNextData;
+                          SendConfig.Enabled := true;
+                        end;
                     end
                {     else if ( msg[0] = 100 ) and ( msg[1] = 0 ) then
                     begin

@@ -835,9 +835,9 @@ object MainForm: TMainForm
     object EmuMaster: TCheckBox
       Left = 84
       Top = 69
-      Width = 97
+      Width = 105
       Height = 17
-      Caption = 'Emu Master'
+      Caption = 'Simulate Devices'
       TabOrder = 22
       OnClick = EmuMasterClick
     end
@@ -1040,6 +1040,24 @@ object MainForm: TMainForm
         TabOrder = 10
         Text = '0'
       end
+    end
+    object SendConfig: TButton
+      Left = 620
+      Top = 392
+      Width = 75
+      Height = 25
+      Caption = 'Send Config'
+      TabOrder = 27
+      OnClick = SendConfigClick
+    end
+    object GetConfig: TButton
+      Left = 620
+      Top = 428
+      Width = 75
+      Height = 25
+      Caption = 'Get Config'
+      TabOrder = 28
+      OnClick = GetConfigClick
     end
   end
   object timer200ms: TTimer
