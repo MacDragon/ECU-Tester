@@ -149,6 +149,11 @@ type
     SendConfig: TButton;
     GetConfig: TButton;
     testeepromwrite: TButton;
+    CenterButton: TButton;
+    LeftButton: TButton;
+    RightButton: TButton;
+    UpButton: TButton;
+    DownButton: TButton;
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -191,6 +196,7 @@ type
     procedure SendConfigClick(Sender: TObject);
     procedure GetConfigClick(Sender: TObject);
     procedure testeepromwriteClick(Sender: TObject);
+    procedure CenterButtonClick(Sender: TObject);
   private
     { Private declarations }
     StartTime: TDateTime;
@@ -211,6 +217,8 @@ type
 
     SendPos : Integer;
     SendTime : TStopwatch;
+    SendType : byte;
+    SendSize : integer;
     SendBuffer: array[0..4095] of byte;
     ReceiveSize : Integer;
     procedure SendNextData;
@@ -301,7 +309,7 @@ procedure TMainForm.StartClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
- msg[1] := 1;
+ msg[0] := 1;
   with CanChannel1 do begin
     CanSend($612, msg, 1 { sizeof(msg) }, 0);
     Output.Items.Add('Sending Start');
@@ -712,7 +720,7 @@ procedure TMainForm.RTDMClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
- msg[1] := 1;
+ msg[0] := 1;
   with CanChannel1 do begin
     Output.Items.Add('Sending RTDM');
     CanSend($611, msg, 1 { sizeof(msg) }, 0);
@@ -808,23 +816,36 @@ begin
       openDialog.FileName;
 
       F := TFileStream.Create(openDialog.FileName, fmOpenRead);
+      try
+        if F.Size = 4096 then
+        begin
+          F.Read(SendBuffer, 4096);
+          SendType := 0;
+          SendSize := 4096;
+        end;
 
-      if F.Size = 4096 then
-      begin
-        F.Read(SendBuffer, 4096);
+        if F.Size <= 1600 then
+        begin
+          F.Read(SendBuffer, F.Size);
+          SendType := 1;
+          SendSize := F.Size;
+        end;
+        SendConfig.Enabled := false;
+        GetConfig.Enabled := false;
+        Output.Items.Add('Sending EEPROM Data.');
+        SendData := true;
+
+        SendPos := -1;
+        SendNextData;
+      Except
+        Output.Items.Add('Error reading data.');
+
       end;
 
       F.Free;
 
-      SendConfig.Enabled := false;
-      GetConfig.Enabled := false;
-      Output.Items.Add('Sending EEPROM Data.');
-      SendData := true;
-      SendPos := -1;
-      SendNextData;
-
-    end
-    else ShowMessage('Open file was cancelled');
+    end;
+ //   else ShowMessage('Sending cancelled.');
 
     // Free up the dialog
     openDialog.Free;
@@ -1037,7 +1058,7 @@ begin
 
                 if F.Size = 0 then
                 begin
-                  F.Write(SendBuffer, 4096);
+                  F.Write(SendBuffer, SendPos);
                 end;
                 Output.Items.Add('File saved.');
 
@@ -1072,6 +1093,7 @@ procedure TMainForm.SendNextData;
 var
   msg: array[0..7] of byte;
   I : integer;
+  packetsize : byte;
 begin
   with CanChannel1 do
     begin
@@ -1084,30 +1106,37 @@ begin
       //      for I := 0 to 4095 do SendBuffer[I] := I;
             msg[0] := 8;
 
-            msg[1] := byte(4096 shr 8);
-            msg[2] := byte(4096);
+            msg[1] := byte(SendSize shr 8);
+            msg[2] := byte(SendSize);
+
+            msg[3] := SendType;
 
             SendPos := 0;
 
-            CanSend($21,msg,3,0);  // send start of transfer.
+            CanSend($21,msg,4,0);  // send start of transfer.
             SendTime := TStopwatch.StartNew;
           end else
           begin
           if ACKReceived then //and ( SendTime.ElapsedMilliseconds > 100 ) then
             begin
               ACKReceived := false;
-              if sendpos < 4095 then // not yet at end
+              if sendpos < sendsize-1 then // not yet at end
               begin
 
+        //        Output.Items.Add('Send:'+inttostr(sendpos));
                 msg[0] := 9; // sending byte.
+
+                packetsize := 4;
 
 
                 msg[1] := byte(sendpos shr 8);
                 msg[2] := byte(sendpos);
 
-            //    if sendpos=32 then sendpos:=33;
 
-                msg[3] := 4;
+                if ( SendPos+packetsize > Sendsize ) then
+                  packetsize := sendsize-sendpos;
+
+                msg[3] := packetsize;
 
                 msg[4] := SendBuffer[sendpos];
                 msg[5] := SendBuffer[sendpos+1];
@@ -1119,9 +1148,9 @@ begin
 
   //              Sleep(100);
               end else
-              if sendpos >= 4096 then
+              if sendpos >= sendsize-1 then
               begin
-                sendpos := 4096;
+                sendpos := sendsize;
                 msg[1] := byte(sendpos shr 8);
                 msg[2] := byte(sendpos);
 
@@ -1168,7 +1197,7 @@ procedure TMainForm.TSClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
- msg[1] := 1;
+ msg[0] := 1;
   with CanChannel1 do begin
     Output.Items.Add('Sending TS');
     CanSend($610, msg, 1 { sizeof(msg) }, 0);
@@ -1459,7 +1488,7 @@ begin
       begin
 
         msg[0] := 10;
-        msg[1] := 1; // specify EEPROM
+        msg[1] := 1; // specify full EEPROM = 0
 
         GetConfig.Enabled := false;
         SendConfig.Enabled := false;
@@ -1490,6 +1519,41 @@ begin
  // PDMClick(nil);
 end;
 
+procedure TMainForm.CenterButtonClick(Sender: TObject);
+var
+  msg: array[0..7] of byte;
+begin
+  if Sender = CenterButton then
+  begin
+    msg[0] := 1;
+  end;
+
+  if Sender = LeftButton then
+  begin
+    msg[0] := 2;
+  end;
+
+  if Sender = RightButton then
+  begin
+    msg[0] := 4;
+  end;
+
+  if Sender = UpButton then
+  begin
+    msg[0] := 8;
+  end;
+
+  if Sender = DownButton then
+  begin
+    msg[0] := 16;
+  end;
+
+  with CanChannel1 do begin
+    CanSend($614, msg, 1, 0);
+    Output.Items.Add('Sending Start');
+  end;
+end;
+
 procedure TMainForm.testeepromwriteClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
@@ -1502,6 +1566,7 @@ begin
       if MainStatus = 1 then  // only send request if in startup state.
       begin
         CanSend($21,msg,3,0);
+        Output.Items.Add('EEPROM Write Request');
       end;
     end;
   end;

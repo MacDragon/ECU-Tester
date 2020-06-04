@@ -251,8 +251,8 @@ object MainForm: TMainForm
       end
     end
     object ComboBox1: TComboBox
-      Left = 432
-      Top = 509
+      Left = 369
+      Top = 511
       Width = 121
       Height = 21
       Style = csDropDownList
@@ -842,8 +842,8 @@ object MainForm: TMainForm
       OnClick = EmuMasterClick
     end
     object HVon: TCheckBox
-      Left = 440
-      Top = 544
+      Left = 377
+      Top = 546
       Width = 97
       Height = 17
       Caption = 'HV On'
@@ -859,8 +859,8 @@ object MainForm: TMainForm
       OnClick = HVForceClick
     end
     object IVTCAN1: TCheckBox
-      Left = 440
-      Top = 567
+      Left = 377
+      Top = 569
       Width = 97
       Height = 17
       Caption = 'IVT CAN1'
@@ -1067,6 +1067,50 @@ object MainForm: TMainForm
       Caption = 'EEPROM Wri'
       TabOrder = 29
       OnClick = testeepromwriteClick
+    end
+    object CenterButton: TButton
+      Left = 582
+      Top = 529
+      Width = 27
+      Height = 25
+      TabOrder = 30
+      OnClick = CenterButtonClick
+    end
+    object LeftButton: TButton
+      Left = 559
+      Top = 529
+      Width = 27
+      Height = 25
+      Caption = #8592
+      TabOrder = 31
+      OnClick = CenterButtonClick
+    end
+    object RightButton: TButton
+      Left = 607
+      Top = 529
+      Width = 27
+      Height = 25
+      Caption = #8594
+      TabOrder = 32
+      OnClick = CenterButtonClick
+    end
+    object UpButton: TButton
+      Left = 582
+      Top = 509
+      Width = 27
+      Height = 25
+      Caption = #8593
+      TabOrder = 33
+      OnClick = CenterButtonClick
+    end
+    object DownButton: TButton
+      Left = 582
+      Top = 552
+      Width = 27
+      Height = 25
+      Caption = #8595
+      TabOrder = 34
+      OnClick = CenterButtonClick
     end
   end
   object timer200ms: TTimer
