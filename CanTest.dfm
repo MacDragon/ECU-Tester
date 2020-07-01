@@ -3,8 +3,8 @@ object MainForm: TMainForm
   Top = 113
   BorderStyle = bsSingle
   Caption = 'Formula ECUCANTest'
-  ClientHeight = 648
-  ClientWidth = 973
+  ClientHeight = 695
+  ClientWidth = 1254
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -18,15 +18,15 @@ object MainForm: TMainForm
   OnKeyPress = FormKeyPress
   OnShow = FormShow
   DesignSize = (
-    973
-    648)
+    1254
+    695)
   PixelsPerInch = 96
   TextHeight = 13
   object GroupBox1: TGroupBox
     Left = 8
     Top = 8
-    Width = 957
-    Height = 632
+    Width = 1238
+    Height = 679
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 0
     object Label3: TLabel
@@ -77,6 +77,20 @@ object MainForm: TMainForm
       Width = 37
       Height = 13
       Caption = 'Label27'
+    end
+    object Label27: TLabel
+      Left = 280
+      Top = 640
+      Width = 46
+      Height = 13
+      Caption = 'Powered:'
+    end
+    object PoweredDevs: TLabel
+      Left = 332
+      Top = 640
+      Width = 66
+      Height = 13
+      Caption = 'PoweredDevs'
     end
     object CanDevices: TComboBox
       Left = 3
@@ -183,28 +197,8 @@ object MainForm: TMainForm
       Width = 97
       Height = 17
       Caption = 'Log to file'
-      Checked = True
-      State = cbChecked
       TabOrder = 11
       OnClick = InvertersClick
-    end
-    object IVTprogramTrig: TButton
-      Left = 591
-      Top = 574
-      Width = 99
-      Height = 25
-      Caption = 'Reconf IVT Trig'
-      TabOrder = 12
-      OnClick = IVTprograTrigClick
-    end
-    object IVTprogramCyc: TButton
-      Left = 696
-      Top = 574
-      Width = 99
-      Height = 25
-      Caption = 'Reconf IVT Cyc'
-      TabOrder = 13
-      OnClick = IVTprogramCycClick
     end
     object PDMGroup: TGroupBox
       Left = 281
@@ -212,7 +206,7 @@ object MainForm: TMainForm
       Width = 82
       Height = 120
       Caption = 'PDM Flags'
-      TabOrder = 14
+      TabOrder = 12
       object IMD: TCheckBox
         Left = 16
         Top = 47
@@ -256,7 +250,7 @@ object MainForm: TMainForm
       Width = 121
       Height = 21
       Style = csDropDownList
-      TabOrder = 15
+      TabOrder = 13
       Items.Strings = (
         '0'
         '1'
@@ -272,7 +266,7 @@ object MainForm: TMainForm
       Width = 74
       Height = 187
       Caption = 'LEDs'
-      TabOrder = 16
+      TabOrder = 14
       object RTDMLED: TCheckBox
         Left = 18
         Top = 71
@@ -290,7 +284,7 @@ object MainForm: TMainForm
         TabOrder = 1
       end
       object TSLED: TCheckBox
-        Left = 16
+        Left = 18
         Top = 25
         Width = 97
         Height = 17
@@ -330,7 +324,7 @@ object MainForm: TMainForm
       Width = 75
       Height = 25
       Caption = 'GetADC'
-      TabOrder = 17
+      TabOrder = 15
       OnClick = GetADCClick
     end
     object GetADCMinMax: TButton
@@ -339,16 +333,16 @@ object MainForm: TMainForm
       Width = 75
       Height = 25
       Caption = 'GetADC M/M'
-      TabOrder = 18
+      TabOrder = 16
       OnClick = GetADCMinMaxClick
     end
     object GroupBox4: TGroupBox
-      Left = 721
+      Left = 1002
       Top = 107
       Width = 233
       Height = 461
       Caption = 'State'
-      TabOrder = 19
+      TabOrder = 17
       object Label7: TLabel
         Left = 16
         Top = 24
@@ -732,9 +726,9 @@ object MainForm: TMainForm
       Left = 16
       Top = 509
       Width = 249
-      Height = 118
+      Height = 142
       Caption = 'Can Device '#39'Emulation'#39
-      TabOrder = 20
+      TabOrder = 18
       object Inverters: TCheckBox
         Left = 13
         Top = 24
@@ -805,7 +799,15 @@ object MainForm: TMainForm
         Height = 17
         Caption = 'IVT'
         TabOrder = 7
-        OnClick = IVTClick
+      end
+      object Memorator: TCheckBox
+        Left = 13
+        Top = 116
+        Width = 97
+        Height = 17
+        Caption = 'Memorator'
+        TabOrder = 8
+        OnClick = MemoratorClick
       end
     end
     object GroupBox6: TGroupBox
@@ -814,7 +816,7 @@ object MainForm: TMainForm
       Width = 66
       Height = 72
       Caption = 'PDM'
-      TabOrder = 21
+      TabOrder = 19
       object HV: TCheckBox
         Left = 16
         Top = 16
@@ -838,7 +840,7 @@ object MainForm: TMainForm
       Width = 105
       Height = 17
       Caption = 'Simulate Devices'
-      TabOrder = 22
+      TabOrder = 20
       OnClick = EmuMasterClick
     end
     object HVon: TCheckBox
@@ -847,7 +849,7 @@ object MainForm: TMainForm
       Width = 97
       Height = 17
       Caption = 'HV On'
-      TabOrder = 23
+      TabOrder = 21
     end
     object HVForce: TButton
       Left = 640
@@ -855,7 +857,7 @@ object MainForm: TMainForm
       Width = 75
       Height = 25
       Caption = 'HV Toggle'
-      TabOrder = 24
+      TabOrder = 22
       OnClick = HVForceClick
     end
     object IVTCAN1: TCheckBox
@@ -864,8 +866,7 @@ object MainForm: TMainForm
       Width = 97
       Height = 17
       Caption = 'IVT CAN1'
-      TabOrder = 25
-      OnClick = IVTClick
+      TabOrder = 23
     end
     object ADCGroup: TGroupBox
       Left = 3
@@ -873,7 +874,7 @@ object MainForm: TMainForm
       Width = 200
       Height = 324
       Caption = 'ADCGroup'
-      TabOrder = 26
+      TabOrder = 24
       object Label6: TLabel
         Left = 24
         Top = 236
@@ -978,7 +979,7 @@ object MainForm: TMainForm
       end
       object ScrollSteering: TScrollBar
         Left = 63
-        Top = 202
+        Top = 203
         Width = 121
         Height = 17
         Min = -100
@@ -1047,7 +1048,7 @@ object MainForm: TMainForm
       Width = 75
       Height = 25
       Caption = 'Send Config'
-      TabOrder = 27
+      TabOrder = 25
       OnClick = SendConfigClick
     end
     object GetConfig: TButton
@@ -1056,7 +1057,7 @@ object MainForm: TMainForm
       Width = 75
       Height = 25
       Caption = 'Get Config'
-      TabOrder = 28
+      TabOrder = 26
       OnClick = GetConfigClick
     end
     object testeepromwrite: TButton
@@ -1065,7 +1066,7 @@ object MainForm: TMainForm
       Width = 75
       Height = 25
       Caption = 'EEPROM Wri'
-      TabOrder = 29
+      TabOrder = 27
       OnClick = testeepromwriteClick
     end
     object CenterButton: TButton
@@ -1073,7 +1074,7 @@ object MainForm: TMainForm
       Top = 529
       Width = 27
       Height = 25
-      TabOrder = 30
+      TabOrder = 28
       OnClick = CenterButtonClick
     end
     object LeftButton: TButton
@@ -1082,7 +1083,7 @@ object MainForm: TMainForm
       Width = 27
       Height = 25
       Caption = #8592
-      TabOrder = 31
+      TabOrder = 29
       OnClick = CenterButtonClick
     end
     object RightButton: TButton
@@ -1091,7 +1092,7 @@ object MainForm: TMainForm
       Width = 27
       Height = 25
       Caption = #8594
-      TabOrder = 32
+      TabOrder = 30
       OnClick = CenterButtonClick
     end
     object UpButton: TButton
@@ -1100,7 +1101,7 @@ object MainForm: TMainForm
       Width = 27
       Height = 25
       Caption = #8593
-      TabOrder = 33
+      TabOrder = 31
       OnClick = CenterButtonClick
     end
     object DownButton: TButton
@@ -1109,8 +1110,53 @@ object MainForm: TMainForm
       Width = 27
       Height = 25
       Caption = #8595
-      TabOrder = 34
+      TabOrder = 32
       OnClick = CenterButtonClick
+    end
+    object PowerNodesList: TCheckListBox
+      Left = 704
+      Top = 121
+      Width = 105
+      Height = 80
+      ItemHeight = 13
+      ParentColor = True
+      TabOrder = 33
+    end
+    object AnalogNodesList: TCheckListBox
+      Left = 704
+      Top = 201
+      Width = 105
+      Height = 151
+      ItemHeight = 13
+      ParentColor = True
+      TabOrder = 34
+    end
+    object ScrollRegen: TScrollBar
+      Left = 831
+      Top = 517
+      Width = 121
+      Height = 17
+      PageSize = 0
+      TabOrder = 35
+      OnChange = ScrollRegenChange
+    end
+    object Regen: TEdit
+      Left = 831
+      Top = 490
+      Width = 121
+      Height = 21
+      NumbersOnly = True
+      TabOrder = 36
+      Text = '0'
+    end
+    object PowerNodeError: TButton
+      Left = 704
+      Top = 358
+      Width = 105
+      Height = 25
+      Caption = 'PowerNodeError'
+      TabOrder = 37
+      OnClick = PowerNodeErrorClick
     end
   end
   object timer200ms: TTimer
@@ -1130,5 +1176,10 @@ object MainForm: TMainForm
     OnTimer = timer100msTimer
     Left = 176
     Top = 40
+  end
+  object timer1000ms: TTimer
+    OnTimer = timer1000msTimer
+    Left = 176
+    Top = 8
   end
 end

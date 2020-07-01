@@ -3,7 +3,11 @@ program ECUCanTest;
 uses
   Vcl.Forms,
   CanTest in 'CanTest.pas' {MainForm},
-  CanChanEx in 'canchanex.pas';
+  canchanex in 'canchanex.pas',
+  powernode in 'powernode.pas',
+  analognode in 'analognode.pas',
+  consts in 'consts.pas',
+  ivt in 'ivt.pas';
 
 {$R *.res}
 

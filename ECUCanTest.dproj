@@ -95,6 +95,10 @@
             <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="canchanex.pas"/>
+        <DCCReference Include="powernode.pas"/>
+        <DCCReference Include="analognode.pas"/>
+        <DCCReference Include="consts.pas"/>
+        <DCCReference Include="ivt.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

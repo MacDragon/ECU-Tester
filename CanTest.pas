@@ -10,8 +10,7 @@ uses
 //  Vcl.Mask;
   Windows, Messages, SysUtils, Variants, Classes, Graphics,
   Controls, Forms, Dialogs, StdCtrls, CanChanEx, ExtCtrls,
-  Mask, System.Diagnostics;
-
+  Mask, System.Diagnostics, analognode, powernode, Vcl.CheckLst;
 
 type
   TMainForm = class(TForm)
@@ -31,8 +30,6 @@ type
     Clear: TButton;
     SendNMTWakeups: TButton;
     Log: TCheckBox;
-    IVTprogramTrig: TButton;
-    IVTprogramCyc: TButton;
     PDMGroup: TGroupBox;
     IMD: TCheckBox;
     BSPD: TCheckBox;
@@ -154,6 +151,15 @@ type
     RightButton: TButton;
     UpButton: TButton;
     DownButton: TButton;
+    timer1000ms: TTimer;
+    Memorator: TCheckBox;
+    AnalogNodesList: TCheckListBox;
+    PowerNodesList: TCheckListBox;
+    ScrollRegen: TScrollBar;
+    Regen: TEdit;
+    Label27: TLabel;
+    PoweredDevs: TLabel;
+    PowerNodeError: TButton;
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -177,9 +183,6 @@ type
     procedure SendNMTWakeupsClick(Sender: TObject);
     procedure IMUClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
-    procedure IVTprograTrigClick(Sender: TObject);
-    procedure IVTClick(Sender: TObject);
-    procedure IVTprogramCycClick(Sender: TObject);
     procedure GetADCClick(Sender: TObject);
     procedure GetADCMinMaxClick(Sender: TObject);
     procedure BMSClick(Sender: TObject);
@@ -197,6 +200,10 @@ type
     procedure GetConfigClick(Sender: TObject);
     procedure testeepromwriteClick(Sender: TObject);
     procedure CenterButtonClick(Sender: TObject);
+    procedure timer1000msTimer(Sender: TObject);
+    procedure MemoratorClick(Sender: TObject);
+    procedure ScrollRegenChange(Sender: TObject);
+    procedure PowerNodeErrorClick(Sender: TObject);
   private
     { Private declarations }
     StartTime: TDateTime;
@@ -226,13 +233,14 @@ type
     procedure ReceiveNextData(var data : array of byte );
     procedure CanChannel1CanRx(Sender: TObject);
     function InterPolateSteering(SteeringAngle : Integer) : Word;
-    procedure sendIVT(msg0, msg1, msg2, msg3 : byte);
     procedure sendINVL;
     procedure sendINVR;
 
-    function CanSend(id: Longint; var msg; dlc, flags: Cardinal): integer;
   public
     { Public declarations }
+    AnalogNodes : TAnalogNodeHandler;
+    PowerNodes : TPowerNodehandler;
+    function CanSend(id: Longint; var msg; dlc, flags: Cardinal): integer;
     procedure PopulateList;
   end;
 
@@ -241,7 +249,7 @@ var
 
 implementation
 
-uses DateUtils, canlib;
+uses DateUtils, canlib, consts;
 
 {$R *.dfm}
 
@@ -311,8 +319,11 @@ var
 begin
  msg[0] := 1;
   with CanChannel1 do begin
-    CanSend($612, msg, 1 { sizeof(msg) }, 0);
-    Output.Items.Add('Sending Start');
+    if active then
+    begin
+      CanSend( AdcSimInput_ID+4, msg, 1 { sizeof(msg) }, 0);
+      Output.Items.Add('Sending Start');
+    end;
   end;
 end;
 
@@ -452,7 +463,6 @@ begin
  //                 msg[0] := 0;
         end;
 
-
         msg[0] := InverterRStatus;
         msg[1] := 22;
         msg[2] := 0;
@@ -471,174 +481,34 @@ begin
       end;
 end;
 
-procedure TMainForm.sendIVT(msg0, msg1, msg2, msg3 : byte);
+procedure TMainForm.MemoratorClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
-begin
-    msg[0] := msg0;
-    msg[1] := msg1;
-    msg[2] := msg2;
-    msg[3] := msg3;
-    Output.Items.Add('IVTSend('+IntToStr(msg[0] )+','+IntToStr(msg[1] )+','+
-                            IntToStr(msg[2] )+','+  IntToStr(msg[3] )+')');
-    with CanChannel1 do CanSend($411, msg, 8, 0);
-    Sleep(100);
-end;
+  CurTime : TDateTime;
+  Year, Month, Day, Hour, Min, Sec, Msec : Word;
 
-procedure TMainForm.IVTClick(Sender: TObject);
-var
-  msg: array[0..7] of byte;
 begin
-  if EmuMaster.checked then
-  begin
-    msg[0] := 0;  // insert an IVT value here.
-    msg[1] := 0;
-    msg[2] := 0;
-    msg[3] := 0;
-    msg[4] := 90;
-    msg[5] := 10;
+    CurTime := Now;
 
+    DecodeTime(CurTime, Hour, Min, Sec, Msec );
+    DecodeDate(CurTime, Year, Month, Day);
+    //, myMilli);
+    msg[0] := Year-2000;  // insert an IVT value here.
+    msg[1] := Month;
+    msg[2] := Day;
+    msg[3] := Hour;
+    msg[4] := Min;
+    msg[5] := Sec;
     with CanChannel1 do
     begin
       if Active then
       begin
-        if IVT.Checked then
+        if Memorator.Checked then
         begin
-
-          CanSend($521,msg,6,0);  // IVT
-          msg[0] := 1;  // insert an IVT value here.
-
-          if HVOn.checked then
-          begin
-            msg[3] := 8;
-            msg[4] := 90;
-            msg[5] := 10;
-          end
-          else
-          begin
-            msg[3] := 0;
-            msg[4] := 90;
-            msg[5] := 10;
-          end;
-
-          CanSend($522,msg,6,0);  // IVT
-          msg[0] := 2;  // insert an IVT value here.
-          CanSend($523,msg,6,0);  // IVT
-
-          msg[3] := 0;
-          msg[4] := 90;
-          msg[5] := 10;
-
-          msg[0] := 5;  // insert an IVT value here.
-
-          CanSend($526,msg,6,0);  // IVT
-
-          msg[0] := 7;  // insert an IVT value here.
-          CanSend($528,msg,6,0);  // IVT
+          CanSend($7B,msg,6,0);  // IVT
         end;
       end;
     end;
-  end;
-end;
-
-procedure TMainForm.IVTprogramCycClick(Sender: TObject);
-{var
-  msg: array[0..7] of byte;
-  formattedDateTime : String;
-  }
-begin
-  with CanChannel1 do begin
-    if not Active then begin
-      if True then
-
-     // Bitrate := canBITRATE_500K;
-      Bitrate := canBITRATE_1M;
-
-      Channel := CanDevices.ItemIndex;
-
-      Open;
-      OnCanRx := CanChannel1CanRx;
-      BusActive := true;
-      CanDevices.Enabled := false;
-      StartTime := Now;
-      SendCANADC.Enabled := true;
-      with CanChannel1 do begin
-          sendIVT( $34, 0, 1, 0);     // stop operation.
-       //   sendIVT( $3A ,2, 0, 0);     // set 1mbit canbus.
-
-         // cyclic default settings..
-          sendIVT( $20, 2, 0, 10);  // current 20ms
-          sendIVT( $21, 2, 0, 10);  // voltages 60ms
-          sendIVT( $22, 2, 0, 10);
-          sendIVT( $23, 0, 0, 10);
-
-          sendIVT( $24, 0, 0, 100);    // temp on. 100ms
-          sendIVT( $25, 2, 0, 100);    // watts on. 100ms
-          sendIVT( $26, 0, 0, 100);   // watt hours on.  100ms
-          sendIVT( $27, 2, 0, 255);   // watt hours on.  100ms
-          sendIVT( $32, 0, 0, 100);   // save settings.
-          sendIVT( $34, 1, 1, 0);    // turn operation back on.
-
-//          BusActive := false;
-
-      end
-    end;
-  end;
-end;
-
-procedure TMainForm.IVTprograTrigClick(Sender: TObject);
-{var
-  msg: array[0..7] of byte;
-  formattedDateTime : String;
-}
-begin
-  with CanChannel1 do begin
-    if not Active then begin
-      if True then
-
-   //   Bitrate := canBITRATE_500K;
-      Bitrate := canBITRATE_1M;
-
-      Channel := CanDevices.ItemIndex;
-
-      Open;
-      OnCanRx := CanChannel1CanRx;
-      BusActive := true;
-      StartTime := Now;
-      with CanChannel1 do begin
-          sendIVT( $34, 0, 1, 0);     // stop operation.
-       //   sendIVT( $3A ,2, 0, 0);     // set 1mbit canbus., cycle connection after.
-       // 1041, 52, 0, 1, 0 // stop operation
-       // 1041, 58, 4, 0, 0     <- 500k , 2 for 1mbitm
-
-       // reset everything message, 48, 0, 0, 0, 0, 19, 235
-
-      // ivt serial no 5099 ( 0,0, 19, 235 )
-
-      // alive message, 191, can id for messages ( hi, lo), serial  ( hh, hm, ml, ll )
-
-
-
-              // cyclic 100ms settings.
-          sendIVT( $20, 1, 0, 1);   // current
-          sendIVT( $21, 1, 0, 1);   // v1
-          sendIVT( $22, 1, 0, 1);   // v2
-          sendIVT( $23, 1, 0, 1);   // v3
-          sendIVT( $24, 1, 0, 1);   // temp
-
-          sendIVT( $25, 1, 0, 1);   // watts on.
-          sendIVT( $26, 1, 0, 1);   // As?
-          sendIVT( $27, 1, 0, 1);   // watt hours on.
-
-          sendIVT( $32, 1, 0, 1);   // save settings.
-          sendIVT( $34, 1, 1, 0);
-
-                                    // trigger $31, 7 = i,v1,v2
-       //   BusActive := false;
-
-      end
-    end;
-  end;
 end;
 
 procedure TMainForm.PDMClick(Sender: TObject);
@@ -716,14 +586,29 @@ begin
     CanDevices.ItemIndex := 0;
 end;
 
+procedure TMainForm.PowerNodeErrorClick(Sender: TObject);
+var
+  msg: array[0..7] of byte;
+begin
+  msg[0] := 36;
+  msg[1] := 4;
+  msg[5] := 112; // send error that output switched off unexpectedly.
+  PowerNodes.setPower(DeviceIDType.IVT, false);
+  MainForm.PoweredDevs.Caption := PowerNodes.listPowered;
+  CanSend(600, msg, 6, 0);
+end;
+
 procedure TMainForm.RTDMClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
  msg[0] := 1;
   with CanChannel1 do begin
-    Output.Items.Add('Sending RTDM');
-    CanSend($611, msg, 1 { sizeof(msg) }, 0);
+    if active then
+    begin
+      Output.Items.Add('Sending RTDM');
+      CanSend( AdcSimInput_ID+3, msg, 1 { sizeof(msg) }, 0);
+    end;
   end;
 end;
 
@@ -733,10 +618,17 @@ begin
    BrakeR.Text := BrakePedal.Position.ToString;
 end;
 
+procedure TMainForm.ScrollRegenChange(Sender: TObject);
+begin
+  Regen.Text := ScrollRegen.Position.ToString;
+end;
+
 procedure TMainForm.ScrollSteeringChange(Sender: TObject);
 begin
   Steering.Text := ScrollSteering.Position.ToString;
 end;
+
+
 
 procedure TMainForm.SendADCClick(Sender: TObject);
 var
@@ -753,7 +645,7 @@ begin
       msg[0] := 0;
       msg[1] := 0; // if received value in ID is not 0 assume true and switch to fakeADC over CAN.
     end;
-    if Active then CanSend($600,msg,2,0);
+    if Active then CanSend(AdcSimInput_ID,msg,2,0);
   end;
   SendCANADC.Enabled := SendADC.Checked;
 end;
@@ -763,8 +655,6 @@ var
   msg: array[0..7] of byte;  { this was defined as char in original test code
 which is nowadays 16 bit in delphi. }
 const
-  ADCENABLE = $600;
-  ADCID  = $601;
   DrivingModeValue : array[0..7] of word = ( 5, 10,15,20,25,30,45, 65 );
 begin
   with CanChannel1 do begin
@@ -778,7 +668,7 @@ begin
       msg[5] := DrivingModeValue[DriveMode.ItemIndex];
       msg[6] := StrToInt(Coolant1.Text);
       msg[7] := StrToInt(Coolant2.Text);
-      CanSend(ADCID,msg,8,0);
+      CanSend(AdcSimInput_ID+1,msg,8,0);
       end;
       //Output.Items.Add('ADCSent() : '+TimeToStr(System.SysUtils.Now));
     end;
@@ -907,6 +797,14 @@ begin
  // Output.Items.Add(IntToStr(InterPolateSteering(StrToInt((Steering.Text)))));
 end;
 
+procedure TMainForm.timer1000msTimer(Sender: TObject);
+begin
+  if EmuMaster.checked then
+  begin
+    MemoratorClick(nil);
+  end;
+end;
+
 procedure TMainForm.timer100msTimer(Sender: TObject);
 var
   msg: array[0..5] of byte;
@@ -917,7 +815,7 @@ begin
      if SendTime.ElapsedMilliseconds > 1000  then
       begin
         // timeout
-        SendData := false;
+        ReceiveData := false;
         SendPos := -1;
         SendConfig.Enabled := true;
         GetConfig.Enabled := true;
@@ -1189,7 +1087,7 @@ begin
   begin
     PDMClick(nil);
     CANBMSClick(nil);
-    IVTClick(nil);
+    //IVTClick(nil);
   end;
 end;
 
@@ -1199,8 +1097,11 @@ var
 begin
  msg[0] := 1;
   with CanChannel1 do begin
-    Output.Items.Add('Sending TS');
-    CanSend($610, msg, 1 { sizeof(msg) }, 0);
+  if active then
+    begin
+      Output.Items.Add('Sending TS');
+      CanSend( AdcSimInput_ID+2, msg, 1 { sizeof(msg) }, 0);
+    end;
   end;
 end;
 
@@ -1324,7 +1225,7 @@ begin
     begin
       if FLSpeed.Checked then
       begin
-        CanSend($613,msg,3,0);
+        CanSend( AdcSimInput_ID+5,msg,3,0);
       end;
     end;
   end;
@@ -1349,10 +1250,14 @@ procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   with CanChannel1 do
   begin
+  try
         BusActive := false;
         onBus.Caption := 'Off bus';
         goOnBus.Caption := 'Go on bus';
         CanDevices.Enabled := true;
+  except
+
+  end;
         Close;
   end;
   try
@@ -1368,6 +1273,9 @@ end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
+  AnalogNodes := TAnalogNodeHandler.Create(AnalogNodesList);
+  PowerNodes := TPowerNodeHandler.Create(PowerNodesList);
+
   try
     CanChannel1 := TCanChannelEx.Create(Self);
   except
@@ -1391,6 +1299,7 @@ end;
 procedure TMainForm.FormShow(Sender: TObject);
 begin
   PopulateList;
+  PoweredDevs.Caption := PowerNodes.listPowered;
 end;
 
 
@@ -1509,6 +1418,7 @@ begin
    AccelR.Text := AccelPedal.Position.ToString;
 end;
 
+
 procedure TMainForm.BMSClick(Sender: TObject);
 begin
  // PDMClick(nil);
@@ -1549,8 +1459,11 @@ begin
   end;
 
   with CanChannel1 do begin
-    CanSend($614, msg, 1, 0);
-    Output.Items.Add('Sending Start');
+    if active then
+    begin
+      CanSend( AdcSimInput_ID+6, msg, 1, 0);
+      Output.Items.Add('Sending Control');
+    end;
   end;
 end;
 
@@ -2046,7 +1959,38 @@ begin
 
           if EmuMaster.checked then
           case id of
+
+              NodeCmd_ID : begin    // power node command.
+           //       for example: [3][1][255][255] will close all switches on node 3.
+                  PowerNodes.processCmd(msg, dlc);
+              end;
+
               $80 :  begin    // canopen sync., speed sensors at least.
+
+
+              // power nodes.
+                   begin
+                      for i := 0 to 7 do
+                      msgout[i] := 0;
+
+                      msgout[0] := 0;
+                   //   msgout[1] := byte(500);
+                      CanSend(1710,msgout,3,0);
+                      CanSend(1711,msgout,4,0);
+                      CanSend(1712,msgout,4,0);
+                      CanSend(1713,msgout,7,0);
+                      CanSend(1714,msgout,3,0);
+                   end;
+
+                   // analog nodes.
+                   if SendADC.Checked then
+                   begin
+                      AnalogNodes.processSync;
+                   end;
+
+
+                    PowerNodes.processSync;
+
                 {   if CANBMS.checked then
                    begin
                      CANBMSClick(nil);
@@ -2077,7 +2021,7 @@ begin
                       CanSend($1f1,msgout,8,0);
                    end;
 
-            {       if IVT.Checked then
+            {      if IVT.Checked then
                    begin
                       for i := 0 to 7 do
                       msgout[i] := 0;
@@ -2110,15 +2054,15 @@ begin
 
                       SendADCClick(nil);
 
-                      if SendADC.checked then
+                      if SendADC.Checked then
                        begin
                           msg[0] := 1;
-                          CanSend($600, msg, 1, 0); // tell ECU to use can 'ADC' values for testing.
+                          CanSend($608, msg, 1, 0); // tell ECU to use can 'ADC' values for testing.
                        end
                        else
                        begin
                           msg[0] := 0;
-                          CanSend($600, msg, 1, 0); // tell ECU to not use can 'ADC' values for testing.
+                          CanSend($608, msg, 1, 0); // tell ECU to not use can 'ADC' values for testing.
                        end;
 
                      if (msg[1] = 0) or ( msg[1] = 129 ) and CANBMS.checked then
