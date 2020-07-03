@@ -10,7 +10,7 @@ uses
 //  Vcl.Mask;
   Windows, Messages, SysUtils, Variants, Classes, Graphics,
   Controls, Forms, Dialogs, StdCtrls, CanChanEx, ExtCtrls,
-  Mask, System.Diagnostics, analognode, powernode, Vcl.CheckLst;
+  Mask, System.Diagnostics, analognode, powernode, Vcl.CheckLst, powernodehandler, global;
 
 type
   TMainForm = class(TForm)
@@ -204,6 +204,7 @@ type
     procedure MemoratorClick(Sender: TObject);
     procedure ScrollRegenChange(Sender: TObject);
     procedure PowerNodeErrorClick(Sender: TObject);
+    procedure PowerNodesListClick(Sender: TObject);
   private
     { Private declarations }
     StartTime: TDateTime;
@@ -238,8 +239,8 @@ type
 
   public
     { Public declarations }
-    AnalogNodes : TAnalogNodeHandler;
-    PowerNodes : TPowerNodehandler;
+    AnalogNodes : TAnalogNodeListHandler;
+    PowerNodes : TPowerNodeHandler;
     function CanSend(id: Longint; var msg; dlc, flags: Cardinal): integer;
     procedure PopulateList;
   end;
@@ -596,6 +597,15 @@ begin
   PowerNodes.setPower(DeviceIDType.IVT, false);
   MainForm.PoweredDevs.Caption := PowerNodes.listPowered;
   CanSend(600, msg, 6, 0);
+end;
+
+procedure TMainForm.PowerNodesListClick(Sender: TObject);
+begin
+  if not PowerNodesList.Checked[PowerNodesList.ItemIndex] then
+  begin
+    PowerNodes.unplug(PowerNodesList.ItemIndex);
+    PoweredDevs.Caption := PowerNodes.listPowered;
+  end;
 end;
 
 procedure TMainForm.RTDMClick(Sender: TObject);
@@ -1273,9 +1283,8 @@ end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
-  AnalogNodes := TAnalogNodeHandler.Create(AnalogNodesList);
   PowerNodes := TPowerNodeHandler.Create(PowerNodesList);
-
+  AnalogNodes := TAnalogNodeListHandler.Create(PowerNodes, AnalogNodesList);
   try
     CanChannel1 := TCanChannelEx.Create(Self);
   except
@@ -1962,32 +1971,14 @@ begin
 
               NodeCmd_ID : begin    // power node command.
            //       for example: [3][1][255][255] will close all switches on node 3.
-                  PowerNodes.processCmd(msg, dlc);
+                  PowerNodes.CANReceive(msg, dlc, id );
               end;
 
               $80 :  begin    // canopen sync., speed sensors at least.
-
-
-              // power nodes.
-                   begin
-                      for i := 0 to 7 do
-                      msgout[i] := 0;
-
-                      msgout[0] := 0;
-                   //   msgout[1] := byte(500);
-                      CanSend(1710,msgout,3,0);
-                      CanSend(1711,msgout,4,0);
-                      CanSend(1712,msgout,4,0);
-                      CanSend(1713,msgout,7,0);
-                      CanSend(1714,msgout,3,0);
-                   end;
-
                    // analog nodes.
-                   if SendADC.Checked then
-                   begin
-                      AnalogNodes.processSync;
-                   end;
+                 //  if SendADC.Checked then
 
+                    AnalogNodes.processSync;
 
                     PowerNodes.processSync;
 

@@ -7,7 +7,10 @@ uses
   powernode in 'powernode.pas',
   analognode in 'analognode.pas',
   consts in 'consts.pas',
-  ivt in 'ivt.pas';
+  ivt in 'ivt.pas',
+  device in 'device.pas',
+  PowerNodeHandler in 'PowerNodeHandler.pas',
+  global in 'global.pas';
 
 {$R *.res}
 

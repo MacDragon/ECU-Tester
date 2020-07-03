@@ -1121,6 +1121,7 @@ object MainForm: TMainForm
       ItemHeight = 13
       ParentColor = True
       TabOrder = 33
+      OnClick = PowerNodesListClick
     end
     object AnalogNodesList: TCheckListBox
       Left = 704

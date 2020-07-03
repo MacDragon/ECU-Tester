@@ -2,29 +2,19 @@ unit ivt;
 
 interface
 
-uses Vcl.CheckLst;
-
+uses Vcl.CheckLst, device, global;
 
 type
-  TNodeFunction = procedure( id : Integer );
-
-  TAnalogNode = record
-    name : String;
-    id : Integer;
-    payload: TNodeFunction;
-  end;
-
-  TIVTHandler = class(TObject)
+  TIVTHandler = class(TDevice)
   public
-    constructor Create(List : TCheckListBox );
-    procedure processSync;
-    procedure sendIVT(msg0, msg1, msg2, msg3 : byte);
+    procedure processSync; override;
   private
+    procedure sendIVT(msg0, msg1, msg2, msg3 : byte);
   end;
 
 implementation
 
-uses powernode, System.SysUtils, CanTest;
+uses System.SysUtils, CanTest, powernode;
 
 
 procedure TIVTHandler.sendIVT(msg0, msg1, msg2, msg3 : byte);
@@ -70,12 +60,6 @@ begin
   MainForm.CanSend(id,msgout,6,0);
 end;
 
-constructor TIVTHandler.Create(List: TCheckListBox);
-var
-  I : Integer;
-begin
-
-end;
 
 procedure TIVTHandler.processSync;
 var
@@ -131,101 +115,5 @@ begin
   end;
 end;
 
-
-{
-
-procedure IVTprogramCycClick(Sender: TObject);
-begin
-  with CanChannel1 do begin
-    if not Active then begin
-      if True then
-
-     // Bitrate := canBITRATE_500K;
-      Bitrate := canBITRATE_1M;
-
-      Channel := CanDevices.ItemIndex;
-
-      Open;
-      OnCanRx := CanChannel1CanRx;
-      BusActive := true;
-      CanDevices.Enabled := false;
-      StartTime := Now;
-      SendCANADC.Enabled := true;
-      with CanChannel1 do begin
-          sendIVT( $34, 0, 1, 0);     // stop operation.
-       //   sendIVT( $3A ,2, 0, 0);     // set 1mbit canbus.
-
-         // cyclic default settings..
-          sendIVT( $20, 2, 0, 10);  // current 20ms
-          sendIVT( $21, 2, 0, 10);  // voltages 60ms
-          sendIVT( $22, 2, 0, 10);
-          sendIVT( $23, 0, 0, 10);
-
-          sendIVT( $24, 0, 0, 100);    // temp on. 100ms
-          sendIVT( $25, 2, 0, 100);    // watts on. 100ms
-          sendIVT( $26, 0, 0, 100);   // watt hours on.  100ms
-          sendIVT( $27, 2, 0, 255);   // watt hours on.  100ms
-          sendIVT( $32, 0, 0, 100);   // save settings.
-          sendIVT( $34, 1, 1, 0);    // turn operation back on.
-
-//          BusActive := false;
-
-      end
-    end;
-  end;
-end;
-
-procedure IVTprograTrigClick(Sender: TObject);
-begin
-  with CanChannel1 do begin
-    if not Active then begin
-      if True then
-
-   //   Bitrate := canBITRATE_500K;
-      Bitrate := canBITRATE_1M;
-
-      Channel := CanDevices.ItemIndex;
-
-      Open;
-      OnCanRx := CanChannel1CanRx;
-      BusActive := true;
-      StartTime := Now;
-      with CanChannel1 do begin
-          sendIVT( $34, 0, 1, 0);     // stop operation.
-       //   sendIVT( $3A ,2, 0, 0);     // set 1mbit canbus., cycle connection after.
-       // 1041, 52, 0, 1, 0 // stop operation
-       // 1041, 58, 4, 0, 0     <- 500k , 2 for 1mbitm
-
-       // reset everything message, 48, 0, 0, 0, 0, 19, 235
-
-      // ivt serial no 5099 ( 0,0, 19, 235 )
-
-      // alive message, 191, can id for messages ( hi, lo), serial  ( hh, hm, ml, ll )
-
-
-
-              // cyclic 100ms settings.
-          sendIVT( $20, 1, 0, 1);   // current
-          sendIVT( $21, 1, 0, 1);   // v1
-          sendIVT( $22, 1, 0, 1);   // v2
-          sendIVT( $23, 1, 0, 1);   // v3
-          sendIVT( $24, 1, 0, 1);   // temp
-
-          sendIVT( $25, 1, 0, 1);   // watts on.
-          sendIVT( $26, 1, 0, 1);   // As?
-          sendIVT( $27, 1, 0, 1);   // watt hours on.
-
-          sendIVT( $32, 1, 0, 1);   // save settings.
-          sendIVT( $34, 1, 1, 0);
-
-                                    // trigger $31, 7 = i,v1,v2
-       //   BusActive := false;
-
-      end
-    end;
-  end;
-end;
-
-}
 
 end.
