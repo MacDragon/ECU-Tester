@@ -17,8 +17,11 @@ type
 	IVT,
 	Current,
 	TSAL,
+  LV,
   None
 );
+
+ DeviceIDtypes = set of DeviceIDtype;
 
 const
   NodeAck_ID = 601;

@@ -10,6 +10,7 @@ type
     procedure processSync; override;
   private
     procedure sendIVT(msg0, msg1, msg2, msg3 : byte);
+    procedure unplug; override;
   end;
 
 implementation
@@ -29,6 +30,18 @@ begin
                             IntToStr(msg[2] )+','+  IntToStr(msg[3] )+')');
     MainForm.CanSend($411, msg, 8, 0);
     Sleep(100);
+end;
+
+procedure TIVTHandler.unplug;
+begin
+  if poweredon then
+  begin
+      MainForm.Output.Items.Add('IVT Power off');
+  end else
+    MainForm.Output.Items.Add('IVT disconnected');
+
+  inherited;
+
 end;
 
 procedure sendNode11(id : Integer);

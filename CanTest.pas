@@ -10,7 +10,7 @@ uses
 //  Vcl.Mask;
   Windows, Messages, SysUtils, Variants, Classes, Graphics,
   Controls, Forms, Dialogs, StdCtrls, CanChanEx, ExtCtrls,
-  Mask, System.Diagnostics, analognode, powernode, Vcl.CheckLst, powernodehandler, global;
+  Mask, System.Diagnostics, analognode, powernode, Vcl.CheckLst, powernodehandler, global, bms, ivt, inverter;
 
 type
   TMainForm = class(TForm)
@@ -143,9 +143,6 @@ type
     LabelBrakeR: TLabel;
     LabelSteering: TLabel;
     Label9: TLabel;
-    SendConfig: TButton;
-    GetConfig: TButton;
-    testeepromwrite: TButton;
     CenterButton: TButton;
     LeftButton: TButton;
     RightButton: TButton;
@@ -160,6 +157,7 @@ type
     Label27: TLabel;
     PoweredDevs: TLabel;
     PowerNodeError: TButton;
+    LVPower: TCheckBox;
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -171,16 +169,12 @@ type
     procedure TSClick(Sender: TObject);
     procedure RTDMClick(Sender: TObject);
     procedure StartClick(Sender: TObject);
-    procedure SendInverterClick(Sender: TObject);
     procedure CrashClick(Sender: TObject);
     procedure ClearClick(Sender: TObject);
-    procedure InvertersClick(Sender: TObject);
     procedure PDMClick(Sender: TObject);
     procedure FLSpeedClick(Sender: TObject);
     procedure FRSpeedClick(Sender: TObject);
     procedure PedalsClick(Sender: TObject);
-    procedure CANBMSClick(Sender: TObject);
-    procedure SendNMTWakeupsClick(Sender: TObject);
     procedure IMUClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure GetADCClick(Sender: TObject);
@@ -196,15 +190,15 @@ type
     procedure timer100msTimer(Sender: TObject);
     procedure HVForceClick(Sender: TObject);
     procedure EmuMasterClick(Sender: TObject);
-    procedure SendConfigClick(Sender: TObject);
-    procedure GetConfigClick(Sender: TObject);
-    procedure testeepromwriteClick(Sender: TObject);
     procedure CenterButtonClick(Sender: TObject);
     procedure timer1000msTimer(Sender: TObject);
     procedure MemoratorClick(Sender: TObject);
     procedure ScrollRegenChange(Sender: TObject);
     procedure PowerNodeErrorClick(Sender: TObject);
     procedure PowerNodesListClick(Sender: TObject);
+    procedure CANBMSClick(Sender: TObject);
+    procedure IVTClick(Sender: TObject);
+    procedure LVPowerClick(Sender: TObject);
   private
     { Private declarations }
     StartTime: TDateTime;
@@ -212,35 +206,26 @@ type
     logFile, adcdata : TextFile;
     logOpen : Boolean;
     MainStatus : Word;
-    InverterLStatus : Word;
-    InverterLStatusRequest : Word;
-    InverterRStatus : Word;
-    InverterRStatusRequest : Word;
+
     ErrorPos : Word;
     Sanityfail : Boolean;
     CANFail : Boolean;
-    ACKReceived : Boolean;
-    SendData : Boolean;
-    ReceiveData : Boolean;
 
-    SendPos : Integer;
-    SendTime : TStopwatch;
-    SendType : byte;
-    SendSize : integer;
-    SendBuffer: array[0..4095] of byte;
-    ReceiveSize : Integer;
-    procedure SendNextData;
-    procedure SendDataAck(code: byte);
-    procedure ReceiveNextData(var data : array of byte );
+
     procedure CanChannel1CanRx(Sender: TObject);
     function InterPolateSteering(SteeringAngle : Integer) : Word;
-    procedure sendINVL;
-    procedure sendINVR;
+
+
+//    procedure UpdateOutput;
 
   public
     { Public declarations }
     AnalogNodes : TAnalogNodeListHandler;
     PowerNodes : TPowerNodeHandler;
+    BMSDevice : TBMSHandler;
+    IVTDevice : TIVTHandler;
+    InverterR : TInverterHandler;
+    InverterL : TInverterHandler;
     function CanSend(id: Longint; var msg; dlc, flags: Cardinal): integer;
     procedure PopulateList;
   end;
@@ -370,116 +355,15 @@ function TMainForm.InterPolateSteering(SteeringAngle : Integer) : Word;
    end;
 
 
-procedure TMainForm.InvertersClick(Sender: TObject);
-var
-  msg: array[0..7] of byte;
+procedure TMainForm.IVTClick(Sender: TObject);
 begin
-
-  msg[0] := 0;
-  msg[1] := 0;
-  msg[2] := 0;
-  if Inverters.Checked then
-  begin
-    with CanChannel1 do
-    begin
-      if Active then
-      begin
-            CanSend($77E,msg,2,0);  // inverter NMT response
-            InverterLStatus := 64;
-            InverterRStatus := 64;
-            MainStatus := 0;
-            InverterLStat.Caption := IntToStr(InverterLStatus);
-            InverterRStat.Caption := IntToStr(InverterRStatus);
-            SendInverterClick(nil);
-      end;
-    end;
-  end;
+  IVTDevice.Enabled := IVT.checked;
 end;
 
-
-
-procedure TMainForm.sendINVL;
-var
-  msg: array[0..7] of byte;
+procedure TMainForm.LVPowerClick(Sender: TObject);
 begin
-      if Inverters.checked then
-
-      with CanChannel1 do
-      begin
-        case InverterLStatusRequest of
-          128 : InverterLStatus := 64;
-
-          6:  InverterLStatus := 49;
-
-          7:  InverterLStatus := 51;
-
-          15: InverterLStatus := 55;
-
-          0  : //  send error state       InverterLStatus := 104    -- error
-
-        else
-             //     msg[0] := 0;
-        end;
-
-
-        msg[0] := InverterLStatus;
-        msg[1] := 22;
-        msg[2] := 0;
-        msg[3] := 0;
-        msg[4] := 0;
-        msg[5] := 0;
-
-
-
-   //     if Random(100) > 50 then  msg[1] := 0;
-
-        CanSend($2fe,msg,6,0);
-
-        msg[1] := 22+badvalue;
-
-                badvalue := 0;
-
-        CanSend($3fe,msg,4,0);
-        InverterLStat.Caption := IntToStr(InverterLStatus);
-      end;
-end;
-
-procedure TMainForm.sendINVR;
-var
-  msg: array[0..7] of byte;
-begin
-      if Inverters.checked then
-      with CanChannel1 do
-      begin
-        case InverterRStatusRequest of
-          128 : InverterRStatus := 64;
-
-          6:  InverterRStatus := 49;
-
-          7:  InverterRStatus := 51;
-
-          15: InverterRStatus := 55;
-
-        else
- //                 msg[0] := 0;
-        end;
-
-        msg[0] := InverterRStatus;
-        msg[1] := 22;
-        msg[2] := 0;
-        msg[3] := 0;
-        msg[4] := 0;
-        msg[5] := 0;
-
-  //      if Random(100) > 50 then  msg[1] := 0;
-
-        CanSend($2ff,msg,6,0);
-
-        msg[1] := 22;
-
-        CanSend($3ff,msg,4,0);
-        InverterRStat.Caption := IntToStr(InverterRStatus);
-      end;
+  PowerNodes.setPower(DeviceIDType.LV, LVPower.checked);
+  PoweredDevs.Caption := PowerNodes.listPowered;
 end;
 
 procedure TMainForm.MemoratorClick(Sender: TObject);
@@ -601,11 +485,8 @@ end;
 
 procedure TMainForm.PowerNodesListClick(Sender: TObject);
 begin
-  if not PowerNodesList.Checked[PowerNodesList.ItemIndex] then
-  begin
-    PowerNodes.unplug(PowerNodesList.ItemIndex);
-    PoweredDevs.Caption := PowerNodes.listPowered;
-  end;
+  PowerNodes.enabled(PowerNodesList.ItemIndex, PowerNodesList.Checked[PowerNodesList.ItemIndex]);
+  PoweredDevs.Caption := PowerNodes.listPowered;
 end;
 
 procedure TMainForm.RTDMClick(Sender: TObject);
@@ -684,123 +565,6 @@ begin
     end;
 end;
 
-procedure TMainForm.SendConfigClick(Sender: TObject);
-var
-  openDialog : topendialog;    // Open dialog variable
-  F: TFileStream;
-begin
-
-  if ( MainStatus = 1) and ( not SendData ) then
-  begin
-
-    // Create the open dialog object - assign to our open dialog variable
-    openDialog := TOpenDialog.Create(self);
-
-    // Set up the starting directory to be the current one
-    openDialog.InitialDir := GetCurrentDir;
-
-    // Only allow existing files to be selected
-    openDialog.Options := [ofFileMustExist];
-
-    // Allow only .dpr and .pas files to be selected
-    openDialog.Filter :=
-      'ECU EEPROM Datafile|*.dat';
-
-    // Select pascal files as the starting filter type
-    openDialog.FilterIndex := 1;
-
-    // Display the open file dialog
-    if openDialog.Execute
-    then
-    begin
-      openDialog.FileName;
-
-      F := TFileStream.Create(openDialog.FileName, fmOpenRead);
-      try
-        if F.Size = 4096 then
-        begin
-          F.Read(SendBuffer, 4096);
-          SendType := 0;
-          SendSize := 4096;
-        end;
-
-        if F.Size <= 1600 then
-        begin
-          F.Read(SendBuffer, F.Size);
-          SendType := 1;
-          SendSize := F.Size;
-        end;
-        SendConfig.Enabled := false;
-        GetConfig.Enabled := false;
-        Output.Items.Add('Sending EEPROM Data.');
-        SendData := true;
-
-        SendPos := -1;
-        SendNextData;
-      Except
-        Output.Items.Add('Error reading data.');
-
-      end;
-
-      F.Free;
-
-    end;
- //   else ShowMessage('Sending cancelled.');
-
-    // Free up the dialog
-    openDialog.Free;
-  end;
-end;
-
-procedure TMainForm.SendInverterClick(Sender: TObject);
-begin
-  if EmuMaster.checked then
-  begin
-    sendINVL;
-    sendINVR;
-  end;
-end;
-
-procedure TMainForm.SendNMTWakeupsClick(Sender: TObject);
-var
-  msg: array[0..7] of byte;
-begin
-  if EmuMaster.checked then
-  begin
-    msg[0] := 0;
-    msg[1] := 0;
-    msg[2] := 0;
-
-    with CanChannel1 do
-    begin
-      if Active then
-      begin
-        if Inverters.Checked then
-        begin
-          CanSend($77E,msg,2,0);  // inverter NMT response
-          InverterLStatus := 64;
-          InverterRStatus := 64;
-          MainStatus := 0;
-          InverterLStat.Caption := IntToStr(InverterLStatus);
-          InverterRStat.Caption := IntToStr(InverterRStatus);
-          SendInverterClick(nil);
-        end;
-      end;
-    end;
-  //  CANBMSClick(nil);
-  //  InvertersClick(nil);
-  //  FLSpeedClick(nil);
-  //  FRSpeedClick(nil);
-  //  PDMClick(nil);               now on timer.
-
-    if Pedals.Checked then
-    begin
-    //  PedalsClick(nil);
-      // Check(CanChannel1.Write($520,msg,3,0);  // PDM response
-    end;
-  end;
-end;
-
 procedure TMainForm.SteeringChange(Sender: TObject);
 begin
   ScrollSteering.position := StrToInt(Steering.Text);
@@ -820,37 +584,12 @@ var
   msg: array[0..5] of byte;
 begin
 
-  if SendData then  // ensure timeout runs
-  begin
-     if SendTime.ElapsedMilliseconds > 1000  then
-      begin
-        // timeout
-        ReceiveData := false;
-        SendPos := -1;
-        SendConfig.Enabled := true;
-        GetConfig.Enabled := true;
-        Output.Items.Add('Send Timeout');
-      end;
-  end;
-
-  if ReceiveData then  // ensure timeout runs
-  begin
-     if SendTime.ElapsedMilliseconds > 1000  then
-      begin
-        // timeout
-        ReceiveData := false;
-        SendPos := -1;
-        SendConfig.Enabled := true;
-        GetConfig.Enabled := true;
-        Output.Items.Add('Receive Timeout');
-      end;
-  end;
-
   if EmuMaster.checked then
   begin
-        InverterRStat.Caption := IntToStr(InverterRStatus);
-        InverterLStat.Caption := IntToStr(InverterLStatus);
+        InverterRStat.Caption := IntToStr(InverterR.getStatus);
+        InverterLStat.Caption := IntToStr(InverterL.getStatus);
   end;
+
   if IVTCAN1.checked then
   begin
   if Active then
@@ -882,205 +621,6 @@ begin
   end;
 end;
 
-procedure TMainForm.SendDataAck(code: byte);
-var
-  msg: array[0..7] of byte;
-begin
-        msg[0] := 30; // send err
-        msg[1] := code;
-        CanSend($21,msg,3,0);
-end;
-
-procedure TMainForm.ReceiveNextData( var data: array of byte );
-var
-  receivepos : integer;
-  msg: array[0..7] of byte;
-  F: TFileStream;
-  saveDialog : tsavedialog;    // Save dialog variable
-begin
-
-		 receivepos := data[1]*256+data[2];
-			// check receive buffer address matches sending position
-			if ( receivepos <> SendPos ) then
-      begin
-				// unexpected data sequence, reset receive status;
-
-		//		resetReceive();
-				Output.Items.add('Receive OutSeq.');
-        SendDataAck(99);
-			 //	CAN_SendStatus(ReceivingData,ReceiveErr,0);
-			end else // position good, continue.
-			begin
-
-				if SendPos+data[3]<=4096 then
-				begin
-
-          move(data[4], SendBuffer[SendPos], data[3]);
-
-					if (data[3] < 4) then // data received ok, but wasn't full block. end of data.
-					begin
-            Inc(Sendpos, data[3]);
-            SendDataAck(1);
-					end else
-					begin
-            Inc(Sendpos, 4);
-            SendDataAck(1);
-					end;
-
-          if (data[3] = 0 ) then
-          begin
-						ReceiveData := false;
-            GetConfig.Enabled := true;
-            SendConfig.Enabled := true;
-						Output.Items.Add('Receive Done.');
-
-
-            // Create the save dialog object - assign to our save dialog variable
-            saveDialog := TSaveDialog.Create(self);
-
-            // Give the dialog a title
-            saveDialog.Title := 'Save ECU Config data.';
-
-            // Set up the starting directory to be the current one
-            saveDialog.InitialDir := GetCurrentDir;
-
-            // Allow only .txt and .doc file types to be saved
-            saveDialog.Filter := 'ECU EEPROM Datafile|*.dat';
-
-            saveDialog.FileName := 'ECUEEPROM.dat';
-
-            // Set the default extension
-            saveDialog.DefaultExt := 'dat';
-
-            // Select text files as the starting filter type
-            saveDialog.FilterIndex := 1;
-
-            // Display the open file dialog
-            if saveDialog.Execute
-            then
-            begin
-
-              saveDialog.FileName;
-              try
-                F := TFileStream.Create(saveDialog.FileName, fmCreate);
-
-                if F.Size = 0 then
-                begin
-                  F.Write(SendBuffer, SendPos);
-                end;
-                Output.Items.Add('File saved.');
-
-              except
-                Output.Items.Add('Error writing file');
-              end;
-              F.Free;
-            end;
-          //  else ShowMessage('Save file was cancelled');
-
-            // Free up the dialog
-            saveDialog.Free;
-
-
-          end;
-
-				end else
-				begin
-					// TODO tried to receive too much data! error.
-		 //			resetReceive();
-     //		lcd_send_stringpos(3,0,"Receive Error.    ");
-		 //			CAN_SendStatus(ReceivingData, ReceiveErr,0);
-          msg[0] := 30; // send err
-          msg[1] := 99;
-          CanSend($21,msg,3,0);
-          Output.Items.add('Receive Err.');
-				end
-			end;
-end;
-
-procedure TMainForm.SendNextData;
-var
-  msg: array[0..7] of byte;
-  I : integer;
-  packetsize : byte;
-begin
-  with CanChannel1 do
-    begin
-      if Active then
-      begin
-        if SendData then  // if request to send data activated.
-        begin
-          if SendPos = -1 then
-          begin
-      //      for I := 0 to 4095 do SendBuffer[I] := I;
-            msg[0] := 8;
-
-            msg[1] := byte(SendSize shr 8);
-            msg[2] := byte(SendSize);
-
-            msg[3] := SendType;
-
-            SendPos := 0;
-
-            CanSend($21,msg,4,0);  // send start of transfer.
-            SendTime := TStopwatch.StartNew;
-          end else
-          begin
-          if ACKReceived then //and ( SendTime.ElapsedMilliseconds > 100 ) then
-            begin
-              ACKReceived := false;
-              if sendpos < sendsize-1 then // not yet at end
-              begin
-
-        //        Output.Items.Add('Send:'+inttostr(sendpos));
-                msg[0] := 9; // sending byte.
-
-                packetsize := 4;
-
-
-                msg[1] := byte(sendpos shr 8);
-                msg[2] := byte(sendpos);
-
-
-                if ( SendPos+packetsize > Sendsize ) then
-                  packetsize := sendsize-sendpos;
-
-                msg[3] := packetsize;
-
-                msg[4] := SendBuffer[sendpos];
-                msg[5] := SendBuffer[sendpos+1];
-                msg[6] := SendBuffer[sendpos+2];
-                msg[7] := SendBuffer[sendpos+3];
-                sendpos := sendpos+4;
-
-                CanSend($21,msg,8,0);
-
-  //              Sleep(100);
-              end else
-              if sendpos >= sendsize-1 then
-              begin
-                sendpos := sendsize;
-                msg[1] := byte(sendpos shr 8);
-                msg[2] := byte(sendpos);
-
-                for I := 3 to 7 do msg[I] := 0;
-
-                CanSend($21,msg,8,0);
-                SendData := false;
-                SendConfig.Enabled := true;
-                GetConfig.Enabled := true;
-                Output.Items.Add('Send Done');
-
-              end;
-
-            end;
-          end;
-
-      end;
-    end;
-
-  end;
-end;
-
 
 procedure TMainForm.timer10msTimer(Sender: TObject);
 
@@ -1099,6 +639,7 @@ begin
     CANBMSClick(nil);
     //IVTClick(nil);
   end;
+ // UpdateOutput;
 end;
 
 procedure TMainForm.TSClick(Sender: TObject);
@@ -1183,8 +724,9 @@ begin
 
 
       SendADCClick(nil);
-      InverterLStatus := 64;
-      InverterRStatus := 64;
+
+      // startup power up sequence?
+
     end
     else begin
       if logOpen then
@@ -1248,11 +790,17 @@ begin
   begin
     CanDeviceGroup.Visible := true;
     PDMGroup.Visible := true;
+    PowerNodes.setPower(LV, LVPower.checked);
+    PoweredDevs.Caption := PowerNodes.listPowered;
   end
   else
   begin
     CanDeviceGroup.Visible := false;
     PDMGroup.Visible := false;
+
+    PowerNodes.setPower(LV, false); // should remove all power.
+
+    PoweredDevs.Caption := PowerNodes.listPowered;
   end;
 end;
 
@@ -1285,6 +833,13 @@ procedure TMainForm.FormCreate(Sender: TObject);
 begin
   PowerNodes := TPowerNodeHandler.Create(PowerNodesList);
   AnalogNodes := TAnalogNodeListHandler.Create(PowerNodes, AnalogNodesList);
+  BMSDevice := TBMSHandler.Create(PowerNodes,DeviceIDtype.LV, $8);  // BMS is always powered if LV on, as it is supplying the power.
+  IVTDevice := TIVTHandler.Create(PowerNodes,DeviceIDtype.IVT, $511);
+  InverterL := TInverterHandler.Create(PowerNodes, DeviceIDtype.Inverters, $7E);
+  InverterR := TInverterHandler.Create(PowerNodes, DeviceIDtype.Inverters, $7F);
+
+  PoweredDevs.Caption := PowerNodes.listPowered;
+
   try
     CanChannel1 := TCanChannelEx.Create(Self);
   except
@@ -1295,8 +850,7 @@ begin
   CanChannel1.Channel := 0;
   Sanityfail := false;
   CANFail := false;
-  SendData := false;
-  ACKReceived := false;
+
   Output.clear;
 end;
 
@@ -1393,33 +947,6 @@ begin
   end;
 end;
 
-procedure TMainForm.GetConfigClick(Sender: TObject);
-var
-  msg: array[0..7] of byte;
-begin
-
-  with CanChannel1 do
-  begin
-    if Active then
-    begin
-      if ( MainStatus = 1) and ( not SendData ) then  // only send request if in startup state.
-      begin
-
-        msg[0] := 10;
-        msg[1] := 1; // specify full EEPROM = 0
-
-        GetConfig.Enabled := false;
-        SendConfig.Enabled := false;
-        Output.Items.Add('Getting EEPROM Data.');
-        ReceiveData := true;
-        SendPos := 0;
-        CanSend($21,msg,8,0);
-        SendTime := TStopwatch.StartNew;
-      end;
-    end;
-  end;
-
-end;
 
 procedure TMainForm.AccelPedalChange(Sender: TObject);
 begin
@@ -1476,24 +1003,6 @@ begin
   end;
 end;
 
-procedure TMainForm.testeepromwriteClick(Sender: TObject);
-var
-  msg: array[0..7] of byte;
-begin
-  msg[0] := 11;
-  with CanChannel1 do
-  begin
-    if Active then
-    begin
-      if MainStatus = 1 then  // only send request if in startup state.
-      begin
-        CanSend($21,msg,3,0);
-        Output.Items.Add('EEPROM Write Request');
-      end;
-    end;
-  end;
-end;
-
 procedure TMainForm.HVForceClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
@@ -1512,34 +1021,8 @@ begin
 end;
 
 procedure TMainForm.CANBMSClick(Sender: TObject);
-var
-  msg: array[0..7] of byte;
 begin
-  if EmuMaster.checked then
-  begin
-    msg[0] := 0;//+badvalue;
-    if badvalue > 0 then badvalue := badvalue-1;
-    msg[1] := 0;
-    msg[2] := 2;
-    msg[3] := 48;
-    msg[4] := 0;
-    msg[5] := 0;
-    msg[6] := $AB;
-    msg[7] := $CD;
-    // 		uint16_t voltage = CanState.BMSVolt.data[2]*256+CanState.BMSVolt.data[3];
-
-    //	if ( CanState.BMSVolt.dlcsize == 8 &&  voltage > 480 && voltage < 600 ) // check data sanity
-    with CanChannel1 do
-    begin
-      if Active then
-      begin
-        if CANBMS.Checked then
-        begin
-          CanSend($B,msg,8,0);
-        end;
-      end;
-    end;
-  end;
+//  bmsdevice.Enabled := CANBMS.Checked;
 end;
 
 procedure TMainForm.CanChannel1CanRx(Sender: TObject);
@@ -1686,25 +1169,7 @@ begin
                  end;
 
           $21 : begin     // data receive
-                  if ReceiveData then
-                  begin
-                    if msg[0] = 8 then  // receive data.
-                    begin
-                      ReceiveSize := msg[1]*256+msg[2];
-                      SendPos := 0;
-                      SendDataAck(1);
-                      Output.Items.Add('StartReceive('+inttostr(Receivesize)+')');
-                      SendTime := TStopwatch.StartNew;
-                    end;
-
-                    if msg[0] = 9 then  // receive data.
-                    begin
-           //            Output.Items.Add('RCV block');;
-                       ReceiveNextData(msg);
-                       SendTime.Reset;
-                       SendTime.Start;
-                    end;
-                  end;
+               
           end;
 
           $20 :  begin
@@ -1735,23 +1200,8 @@ begin
                     end
                     else if ( msg[0] = 30 ) then
                     begin
-                        // message sending
-                        if msg[1] = 1 then
-                        begin
-                    //      Output.Items.Add('DataAck');
-                          ACKReceived := true;
-                          SendTime.Reset;
-                          SendTime.Start;
-                          SendNextData;
-                        end else if msg[1] = 99 then
-                        begin
-                          Output.Items.Add('DataErr!');
-                          ACKReceived := false;
-                          SendData := false;
-                          SendTime.Stop;
-                          SendNextData;
-                          SendConfig.Enabled := true;
-                        end;
+
+                    // data receive
                     end
                {     else if ( msg[0] = 100 ) and ( msg[1] = 0 ) then
                     begin
@@ -1860,8 +1310,6 @@ begin
 
 
                     end;
-
-
 
            //               if Output.TopIndex > Output.Items.Count - 2 then
                           Output.TopIndex := Output.Items.Count - 1;
@@ -1978,19 +1426,16 @@ begin
                    // analog nodes.
                  //  if SendADC.Checked then
 
-                    AnalogNodes.processSync;
+                   AnalogNodes.processSync;
 
-                    PowerNodes.processSync;
+                   PowerNodes.processSync;
 
-                {   if CANBMS.checked then
-                   begin
-                     CANBMSClick(nil);
-                   end;      }
+                   IVTDevice.processSync;
 
-                   if Inverters.Checked then
-                   begin
-                   //   SendInverterClick(nil);
-                   end;
+                   BMSDevice.processSync;
+
+                   InverterR.processSync;
+                   InverterL.processSync;
 
                    if FLSpeed.Checked then
                    begin
@@ -2012,20 +1457,6 @@ begin
                       CanSend($1f1,msgout,8,0);
                    end;
 
-            {      if IVT.Checked then
-                   begin
-                      for i := 0 to 7 do
-                      msgout[i] := 0;
-
-                      msgout[0] := 100;
-                      Check(CanChannel1.Write($521,msgout,6,0);
-
-                      msgout[4] := 5000 shr 8;
-                      msgout[5] := 5000 div 256;
-                      Check(CanChannel1.Write($523,msgout,6,0);
-                   end;  }
-
-
                    SendCANADCClick(nil);
 
                  end;
@@ -2040,8 +1471,6 @@ begin
 
                    if ( msg[0] = $81 ) or ( msg[0] = $82 ) or ( msg[0] = $0 ) then       // reset
                    begin
-                      if msg[0] = $81 then SendNMTWakeupsClick(nil);
-                      if msg[0] = $82 then SendNMTWakeupsClick(nil);
 
                       SendADCClick(nil);
 
@@ -2055,16 +1484,6 @@ begin
                           msg[0] := 0;
                           CanSend($608, msg, 1, 0); // tell ECU to not use can 'ADC' values for testing.
                        end;
-
-                     if (msg[1] = 0) or ( msg[1] = 129 ) and CANBMS.checked then
-                     begin
-                       CANBMSClick(nil);
-                     end;
-
-                     if (msg[1] = 0) or ( msg[1] = 0 ) and Inverters.Checked then
-                     begin
-                 //       InvertersClick(nil);
-                     end;
 
                      if (msg[1] = 0) or ( msg[1] = 112 ) and FLSpeed.Checked then
                      begin
@@ -2092,30 +1511,6 @@ begin
                    if ( msg[1] = $80 ) or ( msg[0] = $0 ) then begin end; // go pre operational
                  end;
 
-          $47E : begin
-                    InverterLStatusRequest := msg[0];
-
-               {     Output.Items.Add( formattedDateTime +
-                      ' InverterL 2FE sent status '
-                      + IntToStr(InverterLStatus));
-
-                    Output.TopIndex := Output.Items.Count - 1;     }
-                    sendINVL;
-                 end;
-
-          $47F : begin
-                   InverterRStatusRequest := msg[0];
-
-            {      Output.Items.Add( formattedDateTime +
-                  ' InverterR 2FF sent status '
-                  + IntToStr(InverterRStatus));
-
-         //            if Output.TopIndex > Output.Items.Count - 2 then
-                  Output.TopIndex := Output.Items.Count - 1;
-                                                            }
-                  sendINVR;
-
-                 end;
           end;
 
       end;

@@ -90,12 +90,10 @@ begin
 end;
 
 
-
-
 procedure TAnalogNode9.processSync;
 var
   msgout: array[0..7] of byte;
-  i, tmp : integer;
+  i : integer;
 begin
   for I := 0 to 7 do
     msgout[i] := 0;
@@ -144,9 +142,9 @@ var
   I : Integer;
 begin
   //inherited Create(powerhandler, none);
-  nodes[0].node := TAnalogNode1.Create(powerhandler, None, nodes[0].node_id, AnalogNode1_ID);
-  nodes[1].node := TAnalogNode9.Create(powerhandler, None, nodes[1].node_id, AnalogNode9_ID);
-  nodes[2].node := TAnalogNode11.Create(powerhandler, None, nodes[2].node_id, AnalogNode11_ID);
+  nodes[0].node := TAnalogNode1.Create(powerhandler, LV, nodes[0].node_id, AnalogNode1_ID);
+  nodes[1].node := TAnalogNode9.Create(powerhandler, LV, nodes[1].node_id, AnalogNode9_ID);
+  nodes[2].node := TAnalogNode11.Create(powerhandler, LV, nodes[2].node_id, AnalogNode11_ID);
 
   listptr := List;
 
@@ -154,9 +152,10 @@ begin
   begin
      listptr.Items.Add(nodes[i].name);
      listptr.Checked[i] := true;
+     nodes[I].node.Enabled := true;
   end;
 
-   i := listptr.Items.Count-1;
+//   i := listptr.Items.Count-1;
 end;
 
 procedure TAnalogNodeListHandler.processSync;

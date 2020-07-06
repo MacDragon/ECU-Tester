@@ -189,7 +189,6 @@ object MainForm: TMainForm
       Height = 25
       Caption = 'NMT Wakeup'
       TabOrder = 10
-      OnClick = SendNMTWakeupsClick
     end
     object Log: TCheckBox
       Left = 736
@@ -198,7 +197,6 @@ object MainForm: TMainForm
       Height = 17
       Caption = 'Log to file'
       TabOrder = 11
-      OnClick = InvertersClick
     end
     object PDMGroup: TGroupBox
       Left = 281
@@ -736,7 +734,6 @@ object MainForm: TMainForm
         Height = 17
         Caption = 'Inverter Present'
         TabOrder = 0
-        OnClick = InvertersClick
       end
       object PDM: TCheckBox
         Left = 13
@@ -799,6 +796,7 @@ object MainForm: TMainForm
         Height = 17
         Caption = 'IVT'
         TabOrder = 7
+        OnClick = IVTClick
       end
       object Memorator: TCheckBox
         Left = 13
@@ -1042,39 +1040,12 @@ object MainForm: TMainForm
         Text = '0'
       end
     end
-    object SendConfig: TButton
-      Left = 620
-      Top = 378
-      Width = 75
-      Height = 25
-      Caption = 'Send Config'
-      TabOrder = 25
-      OnClick = SendConfigClick
-    end
-    object GetConfig: TButton
-      Left = 620
-      Top = 409
-      Width = 75
-      Height = 25
-      Caption = 'Get Config'
-      TabOrder = 26
-      OnClick = GetConfigClick
-    end
-    object testeepromwrite: TButton
-      Left = 620
-      Top = 440
-      Width = 75
-      Height = 25
-      Caption = 'EEPROM Wri'
-      TabOrder = 27
-      OnClick = testeepromwriteClick
-    end
     object CenterButton: TButton
       Left = 582
       Top = 529
       Width = 27
       Height = 25
-      TabOrder = 28
+      TabOrder = 25
       OnClick = CenterButtonClick
     end
     object LeftButton: TButton
@@ -1083,7 +1054,7 @@ object MainForm: TMainForm
       Width = 27
       Height = 25
       Caption = #8592
-      TabOrder = 29
+      TabOrder = 26
       OnClick = CenterButtonClick
     end
     object RightButton: TButton
@@ -1092,7 +1063,7 @@ object MainForm: TMainForm
       Width = 27
       Height = 25
       Caption = #8594
-      TabOrder = 30
+      TabOrder = 27
       OnClick = CenterButtonClick
     end
     object UpButton: TButton
@@ -1101,7 +1072,7 @@ object MainForm: TMainForm
       Width = 27
       Height = 25
       Caption = #8593
-      TabOrder = 31
+      TabOrder = 28
       OnClick = CenterButtonClick
     end
     object DownButton: TButton
@@ -1110,7 +1081,7 @@ object MainForm: TMainForm
       Width = 27
       Height = 25
       Caption = #8595
-      TabOrder = 32
+      TabOrder = 29
       OnClick = CenterButtonClick
     end
     object PowerNodesList: TCheckListBox
@@ -1120,7 +1091,7 @@ object MainForm: TMainForm
       Height = 80
       ItemHeight = 13
       ParentColor = True
-      TabOrder = 33
+      TabOrder = 30
       OnClick = PowerNodesListClick
     end
     object AnalogNodesList: TCheckListBox
@@ -1130,7 +1101,7 @@ object MainForm: TMainForm
       Height = 151
       ItemHeight = 13
       ParentColor = True
-      TabOrder = 34
+      TabOrder = 31
     end
     object ScrollRegen: TScrollBar
       Left = 831
@@ -1138,7 +1109,7 @@ object MainForm: TMainForm
       Width = 121
       Height = 17
       PageSize = 0
-      TabOrder = 35
+      TabOrder = 32
       OnChange = ScrollRegenChange
     end
     object Regen: TEdit
@@ -1147,7 +1118,7 @@ object MainForm: TMainForm
       Width = 121
       Height = 21
       NumbersOnly = True
-      TabOrder = 36
+      TabOrder = 33
       Text = '0'
     end
     object PowerNodeError: TButton
@@ -1156,8 +1127,19 @@ object MainForm: TMainForm
       Width = 105
       Height = 25
       Caption = 'PowerNodeError'
-      TabOrder = 37
+      TabOrder = 34
       OnClick = PowerNodeErrorClick
+    end
+    object LVPower: TCheckBox
+      Left = 712
+      Top = 400
+      Width = 97
+      Height = 17
+      Caption = 'LV Power'
+      Checked = True
+      State = cbChecked
+      TabOrder = 35
+      OnClick = LVPowerClick
     end
   end
   object timer200ms: TTimer
