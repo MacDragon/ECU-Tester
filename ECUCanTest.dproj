@@ -96,14 +96,43 @@
         </DCCReference>
         <DCCReference Include="canchanex.pas"/>
         <DCCReference Include="powernode.pas"/>
-        <DCCReference Include="analognode.pas"/>
         <DCCReference Include="consts.pas"/>
-        <DCCReference Include="inverter.pas"/>
         <DCCReference Include="device.pas"/>
-        <DCCReference Include="PowerNodeHandler.pas"/>
+        <DCCReference Include="PowerHandler.pas">
+            <Form>PowerNodesForm</Form>
+        </DCCReference>
         <DCCReference Include="global.pas"/>
-        <DCCReference Include="ivt.pas"/>
         <DCCReference Include="eeprom.pas"/>
+        <DCCReference Include="frontspeed.pas"/>
+        <DCCReference Include="pdm.pas">
+            <Form>PDMForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="analognode.pas">
+            <Form>AnalogNodesForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="bms.pas">
+            <Form>BMSForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="ivt.pas">
+            <Form>IVTForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="imu.pas">
+            <Form>IMUForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="memorator.pas">
+            <Form>MemoratorForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="inverter.pas">
+            <Form>InverterForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="devicelist.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

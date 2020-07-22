@@ -2,19 +2,40 @@ unit bms;
 
 interface
 
-uses Vcl.CheckLst, device, global;
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.CheckLst, device, global,
+  Vcl.StdCtrls;
 
 type
+  TBMSForm = class(TForm)
+    LimpMode: TCheckBox;
+    BMSVolt: TEdit;
+    Label1: TLabel;
+    Connected: TCheckBox;
+    procedure ConnectedClick(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
   TBMSHandler = class(TDevice)
   public
-    procedure processSync; override;
+    procedure SyncHandler; override;
   end;
+
+var
+  BMSForm: TBMSForm;
+  BMSDevice : TBMSHandler;
 
 implementation
 
-uses System.SysUtils, CanTest, powernode;
+{$R *.dfm}
 
-procedure TBMSHandler.processSync;
+uses CanTest, powernode;
+
+procedure TBMSHandler.SyncHandler;
 var
   msg: array[0..7] of byte;
 begin
@@ -25,13 +46,18 @@ begin
   msg[3] := 48;
   msg[4] := 0;
   msg[5] := 0;
-  msg[6] := $AB;
+  msg[6] := $AB;   // constant to verify message.
   msg[7] := $CD;
   // 		uint16_t voltage = CanState.BMSVolt.data[2]*256+CanState.BMSVolt.data[3];
-
   //	if ( CanState.BMSVolt.dlcsize == 8 &&  voltage > 480 && voltage < 600 ) // check data sanity
 
-  if Powered then MainForm.CanSend($B,msg,8,0);
+  CanSend($B,msg,8,0);
+end;
+
+
+procedure TBMSForm.ConnectedClick(Sender: TObject);
+begin
+  bmsdevice.Enabled := Connected.Checked;
 end;
 
 end.

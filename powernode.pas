@@ -2,44 +2,44 @@ unit powernode;
 
 interface
 
-uses PowerNodeHandler, device, global;
+uses PowerHandler, device, global;
 
 type
  // TPowerNodeListHandler = class(TObject);
 
   TPowerNode = class(TDevice)
-    constructor Create( powerhandler : TPowerNodeHandler;
+    constructor Create( powerhandler : TPowerHandler;
                          powersource : DeviceIDType;
                          node_id : Integer;
                          can_id : Integer;
                          Devices : array of DeviceIDtype; defaultpower : DeviceIDtypes );
-    function CANReceive( const msg : array of byte; const dlc : byte; const can_id : integer ) : boolean; override;
     procedure powerOn; override;
     procedure unplug; override;
   protected
     defaultpower : set of DeviceIDtype;
     node_id : integer;
     Devices : array[0..5] of DeviceIDtype;
+    function CANHandler( const msg : array of byte; const dlc : byte; const can_id : integer ) : boolean; override;
   end;
 
   TPowerNode33 = class(TPowerNode)
-     procedure processSync; override;
+     procedure SyncHandler; override;
   end;
 
   TPowerNode34 = class(TPowerNode)
-     procedure processSync; override;
+     procedure SyncHandler; override;
   end;
 
   TPowerNode35 = class(TPowerNode)
-     procedure processSync; override;
+     procedure SyncHandler; override;
   end;
 
   TPowerNode36 = class(TPowerNode)
-     procedure processSync; override;
+     procedure SyncHandler; override;
   end;
 
   TPowerNode37 = class(TPowerNode)
-     procedure processSync; override;
+     procedure SyncHandler; override;
   end;
 
 
@@ -47,73 +47,61 @@ implementation
 
 uses CanTest, System.SysUtils, consts;
 
-procedure TPowerNode33.processSync;
+procedure TPowerNode33.SyncHandler;
 var
   msgout: array[0..7] of byte;
   i, tmp : integer;
 begin
-  if Powered then
-  begin
-    for I := 0 to 7 do
-      msgout[i] := 0;
-    MainForm.CanSend(can_id,msgout,3,0);
-  end;
+  for I := 0 to 7 do
+    msgout[i] := 0;
+  CanSend(can_id,msgout,3,0);
 end;
 
-procedure TPowerNode34.processSync;
+procedure TPowerNode34.SyncHandler;
 var
   msgout: array[0..7] of byte;
   i, tmp : integer;
 begin
-  if Powered then
-  begin
-    for I := 0 to 7 do
-      msgout[i] := 0;
-    MainForm.CanSend(can_id,msgout,4,0);
-  end;
+  for I := 0 to 7 do
+    msgout[i] := 0;
+  if PowerNodesForm.ShutD.Checked then inc(msgout[0],4); //0b00011100
+  if PowerNodesForm.ShutD2.Checked then inc(msgout[0],8);
+  if PowerNodesForm.ShutD3.Checked then inc(msgout[0],16);
+  CanSend(can_id,msgout,4,0);
 end;
 
 
-procedure TPowerNode35.processSync;
+procedure TPowerNode35.SyncHandler;
 var
   msgout: array[0..7] of byte;
   i, tmp : integer;
 begin
-  if Powered then
-  begin
-    for I := 0 to 7 do
-      msgout[i] := 0;
-    MainForm.CanSend(can_id,msgout,4,0);
-  end;
+  for I := 0 to 7 do
+    msgout[i] := 0;
+  CanSend(can_id,msgout,4,0);
 end;
 
 
-procedure TPowerNode36.processSync;
+procedure TPowerNode36.SyncHandler;
 var
   msgout: array[0..7] of byte;
   i, tmp : integer;
 begin
-  if Powered then
-  begin
-    for I := 0 to 7 do
-      msgout[i] := 0;
-    MainForm.CanSend(can_id,msgout,7,0);
-  end;
+  for I := 0 to 7 do
+    msgout[i] := 0;
+  CanSend(can_id,msgout,7,0);
 end;
 
 
 
-procedure TPowerNode37.processSync;
+procedure TPowerNode37.SyncHandler;
 var
   msgout: array[0..7] of byte;
   i, tmp : integer;
 begin
-  if Powered then
-  begin
-    for I := 0 to 7 do
-      msgout[i] := 0;
-    MainForm.CanSend(can_id,msgout,3,0);
-  end;
+  for I := 0 to 7 do
+    msgout[i] := 0;
+  MainForm.CanSend(can_id,msgout,3,0);
 end;
 
 
@@ -125,7 +113,7 @@ end;
 
 { TPowerNode }
 
-function TPowerNode.CANReceive( const msg: array of byte; const dlc: byte;
+function TPowerNode.CanHandler( const msg: array of byte; const dlc: byte;
   const can_id: integer): boolean;
 var
   msgout: array[0..7] of byte;
@@ -134,47 +122,49 @@ var
 begin
   if Powered then
   begin
-    activecount := 0;
-    for I := 0 to 7 do msgout[i] := 0;
-
-    if ( node_id = msg[0] ) and ( msg[1] = 1 ) then
+    if can_id = $602 then
     begin
-  ;
-      for j := 0 to 5 do
+      activecount := 0;
+      for I := 0 to 7 do msgout[i] := 0;
+
+      if ( node_id = msg[0] ) and ( msg[1] = 1 ) then
       begin
-        if IsBitSet(msg[2], j) then
+        for j := 0 to 5 do
         begin
-            power.setPower(  Devices[j], IsBitSet(msg[3], j));
+          if IsBitSet(msg[2], j) then
+          begin
+              power.setPower(  Devices[j], IsBitSet(msg[3], j));
+          end;
+
+          if power.isPowered(Devices[j]) then
+          begin
+            msgout[3] := msgout[3] or (1 shl j);   // set bit if that device is currently powered.
+            inc(activecount);
+          end
+
         end;
 
-        if power.isPowered(Devices[j]) then
-        begin
-          msgout[3] := msgout[3] or (1 shl j);   // set bit if that device is currently powered.
-          inc(activecount);
-        end
+    //   Acknowledge(SWITCH_POWER, enableSwitching, newState, 0, activeTotal);
+      //            cmd,
+        msgout[0] := msg[0];
+        msgout[1] := 1;
 
+        msgout[2] := msg[2]; // enable switching.
+     //   msgout[3] := // newstate
+        msgout[4] := 0; // nothing
+        msgout[5] :=  activecount;
+
+        msgout[6] := 0; // ack no, keep track for emulation matching?
+        msgout[7] := msgout[1]; // cmd repeated.
+
+        CanSend(NodeAck_ID, msgout, 8, 0);
       end;
-
-  //   Acknowledge(SWITCH_POWER, enableSwitching, newState, 0, activeTotal);
-    //            cmd,
-      msgout[0] := msg[0];
-      msgout[1] := 1;
-
-      msgout[2] := msg[2]; // enable switching.
-   //   msgout[3] := // newstate
-      msgout[4] := 0; // nothing
-      msgout[5] :=  activecount;
-
-      msgout[6] := 0; // ack no, keep track for emulation matching?
-      msgout[7] := msgout[1]; // cmd repeated.
-
-      MainForm.CanSend(NodeAck_ID, msgout, 8, 0);
     end;
   end;
 
 end;
 
-constructor TPowerNode.Create( powerhandler : TPowerNodeHandler;
+constructor TPowerNode.Create( powerhandler : TPowerHandler;
                          powersource : DeviceIDType;
                          node_id : Integer;
                          can_id : Integer;

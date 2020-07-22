@@ -1,29 +1,63 @@
-unit PowerNodeHandler;
+unit PowerHandler;
 
 interface
 
-uses Vcl.CheckLst, global;
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
+  Vcl.CheckLst, global, Vcl.StdCtrls;
 
 type
-  TPowerNodeHandler = class(TObject)
+  TPowerHandler = class(TObject)
   public
     constructor Create( List : TCheckListBox );
-    procedure processSync;
-    procedure CANReceive( msg : array of byte; dlc : byte; can_id : integer );
+//    procedure processSync;
+//    procedure CANReceive( msg : array of byte; dlc : byte; can_id : integer );
     function  isPowered( Device : DeviceIDtype ) : boolean;
     procedure setPower( Device : DeviceIDtype; state : Boolean ); overload;
     procedure setPower( state : Boolean ); overload;
     procedure Enabled( node: integer; state : boolean );
     function listPowered : String;
-    procedure registerdevice( Device : TObject );
   private
     powered : DeviceIDtypes;
     listptr : TCheckListBox;
+    procedure UpdatePowered;
   end;
+
+  TPowerNodesForm = class(TForm)
+    PowerNodesList: TCheckListBox;
+    Label27: TLabel;
+    PoweredDevs: TLabel;
+    LVPower: TCheckBox;
+    HVon: TCheckBox;
+    PowerNodeError: TButton;
+    PDMGroup: TGroupBox;
+    IMD: TCheckBox;
+    BSPD: TCheckBox;
+    BMS: TCheckBox;
+    ShutD: TCheckBox;
+    ShutD2: TCheckBox;
+    ShutD3: TCheckBox;
+    procedure PowerNodesListClick(Sender: TObject);
+    procedure LVPowerClick(Sender: TObject);
+    procedure HVonClick(Sender: TObject);
+    procedure PowerNodeErrorClick(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  PowerNodesForm: TPowerNodesForm;
+  Power : TPowerHandler;
+
 
 implementation
 
-uses cantest, powernode, rtti, device;
+uses cantest, powernode, rtti, device, devicelist;
+
+{$R *.dfm}
 
 //    TPowerNodeTypeClass = class of TPowerNode;
 
@@ -44,17 +78,15 @@ type
 
 var
   nodes : TArray<TPowerNodeListItem>;
-  devices : Array[0..50] of TDevice;
-  devicecount : integer;
 
-function TPowerNodeHandler.isPowered( Device: DeviceIDtype ): boolean;
+function TPowerHandler.isPowered( Device: DeviceIDtype ): boolean;
 begin
   result := false;
   if Device in powered then
     result := true;
 end;
 
-function TPowerNodeHandler.listPowered: String;
+function TPowerHandler.listPowered: String;
 var
   I : DeviceIDtype;
 begin
@@ -65,13 +97,11 @@ begin
     result := result + ' ' +  TRttiEnumerationType.GetName(I);
 end;
 
-constructor TPowerNodeHandler.Create(List: TCheckListBox);
+constructor TPowerHandler.Create(List: TCheckListBox);
 var
   I : Integer;
 begin
   listptr := List;
-
-  devicecount := 0;
 
   nodes := TArray<TPowerNodeListItem>.Create(
     TPowerNodeListItem.Create('Node33', TPowerNode33.Create(self, LV, 33, PowerNode33_ID, [None,None,None,None, Telemetry, Front1],[])),
@@ -86,14 +116,14 @@ begin
      listptr.Items.Add(nodes[i].name);
      listptr.Checked[i] := true;
      nodes[I].node.Enabled := true;
+ //    Devices.registerdevice(nodes[I].node);
   end;
 
    i := listptr.Items.Count-1;
-
 end;
 
-
-procedure TPowerNodeHandler.processSync;
+{
+procedure TPowerHandler.processSync;
 var
   i : Integer;
 begin
@@ -106,17 +136,9 @@ begin
      end;
     end;
 end;
+}
 
-procedure TPowerNodeHandler.registerdevice(Device: TObject);
-begin
-  if devicecount < 50 then
-  begin
-    devices[devicecount] := TDevice(Device);
-    inc(devicecount);
-  end;
-end;
-
-procedure TPowerNodeHandler.setPower(Device : DeviceIDtype; state : Boolean );
+procedure TPowerHandler.setPower(Device : DeviceIDtype; state : Boolean );
 var
   i : integer;
   oldPowered : set of DeviceIDtype;
@@ -127,22 +149,12 @@ begin
   else
     powered := powered - [Device];
 
-  {  count := 0;
-    repeat
-      oldPowered := powered;
-      for i := 0 to length(Nodes)-1 do
-        nodes[i].node.Powered;
-      inc(count)
-    until (oldPowered = powered );// or ( count > length(Nodes)-1 ).
-     }
-  for i := 0 to devicecount-1 do
-  begin
-     devices[i].processpower;
-  end;
+  devices.processPower;
 
+  UpdatePowered;
 end;
 
-procedure TPowerNodeHandler.setPower(state : Boolean );
+procedure TPowerHandler.setPower(state : Boolean );
 var
   i : integer;
   oldPowered : set of DeviceIDtype;
@@ -161,9 +173,17 @@ begin
   end
   else
     powered := []; // remove all power
+
+  UpdatePowered;
 end;
 
-procedure TPowerNodeHandler.Enabled(node: integer; state : boolean);
+procedure TPowerHandler.UpdatePowered;
+begin
+  if Assigned(PowerNodesForm) then
+    PowerNodesForm.PoweredDevs.Caption := listPowered;
+end;
+
+procedure TPowerHandler.Enabled(node: integer; state : boolean);
 var
   oldPowered : set of DeviceIDtype;
   i, count : integer;
@@ -180,7 +200,8 @@ begin
   until (oldPowered = powered );// or ( count > length(Nodes)-1 ).
 end;
 
-procedure TPowerNodeHandler.CANReceive( msg : array of byte; dlc : byte; can_id : integer );
+{
+procedure TPowerHandler.CANReceive( msg : array of byte; dlc : byte; can_id : integer );
 var
   oldPowered : set of DeviceIDtype;
   i : integer;
@@ -193,10 +214,11 @@ begin
 
   if Powered <> oldPowered then
   begin
-    MainForm.PoweredDevs.Caption := listPowered;
+    UpdatePowered;
   end;
 
 end;
+}
 
 { TPowerNodeListItem }
 
@@ -204,6 +226,33 @@ constructor TPowerNodeListItem.Create(name: string; node: TPowerNode);
 begin
   self.name := name;
   self.node := node;
+end;
+
+procedure TPowerNodesForm.HVonClick(Sender: TObject);
+begin
+  Power.setPower(DeviceIDType.HV, HVOn.checked);
+end;
+
+procedure TPowerNodesForm.LVPowerClick(Sender: TObject);
+begin
+  Power.setPower(DeviceIDType.LV, LVPower.checked);
+end;
+
+procedure TPowerNodesForm.PowerNodeErrorClick(Sender: TObject);
+var
+  msg: array[0..7] of byte;
+begin
+  msg[0] := 36;
+  msg[1] := 4;
+  msg[5] := 112; // send error that output switched off unexpectedly.
+  Power.setPower(DeviceIDType.IVT, false);
+  MainForm.CanSend(600, msg, 6, 0);
+end;
+
+procedure TPowerNodesForm.PowerNodesListClick(Sender: TObject);
+begin
+  Power.enabled(PowerNodesList.ItemIndex, PowerNodesList.Checked[PowerNodesList.ItemIndex]);
+  PoweredDevs.Caption := Power.listPowered;
 end;
 
 end.

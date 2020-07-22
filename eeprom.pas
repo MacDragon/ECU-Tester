@@ -74,13 +74,13 @@ begin
         end;
        // SendConfig.Enabled := false;
        // GetConfig.Enabled := false;
- //       Output.Items.Add('Sending EEPROM Data.');
+ //       AddOutput('Sending EEPROM Data.');
         SendData := true;
 
         SendPos := -1;
         SendNextData;
       Except
-  //      Output.Items.Add('Error reading data.');
+  //      AddOutput('Error reading data.');
 
       end;
 
@@ -105,7 +105,7 @@ begin
         SendPos := -1;
      //   SendConfig.Enabled := true;
       //  GetConfig.Enabled := true;
-      //  Output.Items.Add('Send Timeout');
+      //  Output('Send Timeout');
       end;
   end;
 
@@ -118,7 +118,7 @@ begin
         SendPos := -1;
    //     SendConfig.Enabled := true;
     //    GetConfig.Enabled := true;
-    //    Output.Items.Add('Receive Timeout');
+    //    Output('Receive Timeout');
       end;
   end;
 end;

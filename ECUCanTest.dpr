@@ -5,14 +5,20 @@ uses
   CanTest in 'CanTest.pas' {MainForm},
   canchanex in 'canchanex.pas',
   powernode in 'powernode.pas',
-  analognode in 'analognode.pas',
   consts in 'consts.pas',
-  inverter in 'inverter.pas',
   device in 'device.pas',
-  PowerNodeHandler in 'PowerNodeHandler.pas',
+  PowerHandler in 'PowerHandler.pas' {PowerNodesForm},
   global in 'global.pas',
-  ivt in 'ivt.pas',
-  eeprom in 'eeprom.pas';
+  eeprom in 'eeprom.pas',
+  frontspeed in 'frontspeed.pas',
+  pdm in 'pdm.pas' {PDMForm},
+  analognode in 'analognode.pas' {AnalogNodesForm},
+  bms in 'bms.pas' {BMSForm},
+  ivt in 'ivt.pas' {IVTForm},
+  imu in 'imu.pas' {IMUForm},
+  memorator in 'memorator.pas' {MemoratorForm},
+  inverter in 'inverter.pas' {InverterForm},
+  devicelist in 'devicelist.pas';
 
 {$R *.res}
 
@@ -20,5 +26,13 @@ begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TMainForm, MainForm);
+  //  Application.CreateForm(TIMUForm, IMUForm);
+//  Application.CreateForm(TMemoratorForm, MemoratorForm);
+//  Application.CreateForm(TInverterForm, InverterForm);
+//  Application.CreateForm(TPDMForm, PDMForm);
+//  Application.CreateForm(TAnalogNodesForm, AnalogNodesForm);
+//  Application.CreateForm(TPowerNodesForm, PowerNodesForm);
+//  Application.CreateForm(TBMSForm, BMSForm);
+//  Application.CreateForm(TIVTForm, IVTForm);
   Application.Run;
 end.

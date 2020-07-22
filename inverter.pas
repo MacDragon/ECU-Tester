@@ -2,23 +2,59 @@ unit inverter;
 
 interface
 
-uses Vcl.CheckLst, device, global;
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
+  Vcl.CheckLst, device, global, Vcl.StdCtrls, PowerHandler, Vcl.ExtCtrls;
+
+type
+  TInverterForm = class(TForm)
+    Connected: TCheckBox;
+    InverterL1Internal: TLabel;
+    InverterL1Stat: TLabel;
+    Label19: TLabel;
+    Label20: TLabel;
+    InverterR1Stat: TLabel;
+    InverterR1Internal: TLabel;
+    Label1: TLabel;
+    InverterL2Stat: TLabel;
+    InverterL2Internal: TLabel;
+    Label4: TLabel;
+    InverterR2Stat: TLabel;
+    InverterR2Internal: TLabel;
+    Timer1: TTimer;
+    procedure ConnectedClick(Sender: TObject);
+    procedure Timer1Timer(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
 
 type
   TInverterHandler = class(TDevice)
   public
-    procedure processSync; override;
-    function CANReceive( const msg : array of byte; const dlc : byte; const id : integer ) : boolean; override;
     function getStatus : Integer;
   protected
     InverterStatus : Word;
-    InverterStatusRequest : Word;
     procedure PowerOn; override;
+    procedure SyncHandler; override;
+ //   procedure CyclicHandler; override;
+    function CANHandler( const msg : array of byte; const dlc : byte; const id : integer ) : boolean; override;
   end;
+
+var
+  InverterR1 : TInverterHandler;
+  InverterR2 : TInverterHandler;
+  InverterL1 : TInverterHandler;
+  InverterL2 : TInverterHandler;
+  InverterForm : TInverterForm;
 
 implementation
 
-uses System.SysUtils, CanTest, powernode;
+uses CanTest, powernode;
+
+{$R *.dfm}
 
 function TInverterHandler.getStatus : Integer;
 begin
@@ -35,127 +71,106 @@ begin
   msg[2] := 0;
   if Powered then
   begin
-    MainForm.CanSend($700+can_id,msg,2,0);  // inverter NMT response      $77E
+    CanSend($700+can_id,msg,2,0);  // inverter NMT response      $77E
     InverterStatus := 64;
 //    InverterLStat.Caption := IntToStr(InverterLStatus);
 //    InverterRStat.Caption := IntToStr(InverterRStatus);
 //    SendInverterClick(nil);
-    processsync;
+ //   processsync;
   end;
+
 end;
 
-function TInverterHandler.CANReceive(const msg: array of byte; const dlc: byte;
+function TInverterHandler.CANHandler(const msg: array of byte; const dlc: byte;
   const id: integer): boolean;
+var
+  msgout: array[0..7] of byte;
 begin
+
   if Powered then
+  begin
     if id = can_id+$400 then     // $47e
     begin
-      InverterStatusRequest := msg[0];
-      processsync;
+
+      case msg[0] of
+        128 : InverterStatus := 64;
+
+        6:  InverterStatus := 49;
+
+        7:  InverterStatus := 51;
+
+        15: InverterStatus := 55;
+
+        0  : //  send error state       InverterLStatus := 104    -- error
+
+      else
+           //     msg[0] := 0;
+      end;
+
+
+    msgout[0] := InverterStatus;
+    msgout[1] := 22;
+    msgout[2] := 0;
+    msgout[3] := 0;
+    msgout[4] := 0;
+    msgout[5] := 0;
+
+    //     if Random(100) > 50 then  msg[1] := 0;
+
+    CanSend($180+can_id,msgout,4,0);
     end;
-end;
-
-procedure TInverterHandler.processSync;
-var
-  msg: array[0..7] of byte;
-  i : integer;
-begin
-  if MainForm.PowerNodes.isPowered(DeviceIDType.IVT) and MainForm.EmuMaster.checked  then
-  begin
-    msg[0] := 0;  // insert an IVT value here.
-    msg[1] := 0;
-    msg[2] := 0;
-    msg[3] := 0;
-    msg[4] := 90;
-    msg[5] := 10;
-
   end;
 end;
 
-{
-procedure sendINVL;
+procedure TInverterHandler.SyncHandler;
 var
-  msg: array[0..7] of byte;
+  msgout: array[0..7] of byte;
+  i : integer;
 begin
-      if Inverters.checked then
+    msgout[0] := InverterStatus;
+    msgout[1] := 22;
+    msgout[2] := 0;
+    msgout[3] := 0;
+    msgout[4] := 0;
+    msgout[5] := 0;
 
-      with CanChannel1 do
-      begin
-        case InverterLStatusRequest of
-          128 : InverterLStatus := 64;
+  //     if Random(100) > 50 then  msg[1] := 0;
+    CanSend($280+can_id,msgout,6,0);
 
-          6:  InverterLStatus := 49;
+    msgout[1] := 22;//+badvalue;
 
-          7:  InverterLStatus := 51;
-
-          15: InverterLStatus := 55;
-
-          0  : //  send error state       InverterLStatus := 104    -- error
-
-        else
-             //     msg[0] := 0;
-        end;
-
-
-        msg[0] := InverterLStatus;
-        msg[1] := 22;
-        msg[2] := 0;
-        msg[3] := 0;
-        msg[4] := 0;
-        msg[5] := 0;
-
-
-
-   //     if Random(100) > 50 then  msg[1] := 0;
-
-        CanSend($2fe,msg,6,0);
-
-        msg[1] := 22+badvalue;
-
-                badvalue := 0;
-
-        CanSend($3fe,msg,4,0);
-        InverterLStat.Caption := IntToStr(InverterLStatus);
-      end;
+    CanSend($380+can_id,msgout,4,0);
 end;
 
-procedure TMainForm.sendINVR;
-var
-  msg: array[0..7] of byte;
+procedure TInverterForm.ConnectedClick(Sender: TObject);
 begin
-      if Inverters.checked then
-      with CanChannel1 do
-      begin
-        case InverterRStatusRequest of
-          128 : InverterRStatus := 64;
+  InverterL1.Enabled := Connected.Checked;
+  InverterR1.Enabled := Connected.Checked;
+  InverterL2.Enabled := Connected.Checked;
+  InverterR2.Enabled := Connected.Checked;
+end;
 
-          6:  InverterRStatus := 49;
+procedure TInverterForm.Timer1Timer(Sender: TObject);
+begin
+  if InverterR1.Powered then
+    InverterForm.InverterR1Stat.Caption := IntToStr(InverterR1.getStatus)
+  else
+    InverterForm.InverterR1Stat.Caption := '-';
 
-          7:  InverterRStatus := 51;
+  if InverterR2.Powered then
+    InverterForm.InverterR2Stat.Caption := IntToStr(InverterR2.getStatus)
+  else
+    InverterForm.InverterR2Stat.Caption := '-';
 
-          15: InverterRStatus := 55;
+  if InverterL1.Powered then
+    InverterForm.InverterL1Stat.Caption := IntToStr(InverterL1.getStatus)
+  else
+    InverterForm.InverterL1Stat.Caption := '-';
 
-        else
- //                 msg[0] := 0;
-        end;
-
-        msg[0] := InverterRStatus;
-        msg[1] := 22;
-        msg[2] := 0;
-        msg[3] := 0;
-        msg[4] := 0;
-        msg[5] := 0;
-
-  //      if Random(100) > 50 then  msg[1] := 0;
-
-        CanSend($2ff,msg,6,0);
-
-        msg[1] := 22;
-
-        CanSend($3ff,msg,4,0);
-        InverterRStat.Caption := IntToStr(InverterRStatus);
-      end;
-end; }
-
+  if InverterL2.Powered then
+    InverterForm.InverterL2Stat.Caption := IntToStr(InverterL2.getStatus)
+  else
+    InverterForm.InverterL2Stat.Caption := '-';
+end;
 
 end.

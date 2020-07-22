@@ -10,13 +10,14 @@ uses
 //  Vcl.Mask;
   Windows, Messages, SysUtils, Variants, Classes, Graphics,
   Controls, Forms, Dialogs, StdCtrls, CanChanEx, ExtCtrls,
-  Mask, System.Diagnostics, analognode, powernode, Vcl.CheckLst, powernodehandler, global, bms, ivt, inverter;
+  Mask, System.Diagnostics, analognode, powernode, Vcl.CheckLst,
+  global, powerhandler, memorator, bms, ivt, inverter, pdm, frontspeed, imu,
+  Vcl.ComCtrls, device;
 
 type
   TMainForm = class(TForm)
     goOnBus: TButton;
     SendCANADC: TButton;
-    timer200ms: TTimer;
     Output: TListBox;
     GroupBox1: TGroupBox;
     CanDevices: TComboBox;
@@ -30,11 +31,6 @@ type
     Clear: TButton;
     SendNMTWakeups: TButton;
     Log: TCheckBox;
-    PDMGroup: TGroupBox;
-    IMD: TCheckBox;
-    BSPD: TCheckBox;
-    BMS: TCheckBox;
-    ComboBox1: TComboBox;
     GroupBox3: TGroupBox;
     RTDMLED: TCheckBox;
     TSOffLED: TCheckBox;
@@ -66,15 +62,6 @@ type
     TorqueRqLR: TLabel;
     TorqueRqRR: TLabel;
     OnBus: TLabel;
-    CanDeviceGroup: TGroupBox;
-    Inverters: TCheckBox;
-    PDM: TCheckBox;
-    FLSpeed: TCheckBox;
-    FRSpeed: TCheckBox;
-    CANBMS: TCheckBox;
-    Pedals: TCheckBox;
-    IMU: TCheckBox;
-    IVT: TCheckBox;
     Label17: TLabel;
     Label18: TLabel;
     SpeedRLR: TLabel;
@@ -106,99 +93,41 @@ type
     canerrorcount: TLabel;
     Label26: TLabel;
     timer10ms: TTimer;
-    timer100ms: TTimer;
     Label1: TLabel;
     Label2: TLabel;
     State: TLabel;
     StateInfo: TLabel;
-    HVon: TCheckBox;
-    Label19: TLabel;
-    Label20: TLabel;
-    InverterLStat: TLabel;
-    InverterRStat: TLabel;
-    InverterLInternal: TLabel;
-    Label30: TLabel;
     SpeedFLR: TLabel;
     SpeedFRR: TLabel;
     HVForce: TButton;
-    IVTCAN1: TCheckBox;
-    ShutD: TCheckBox;
-    ADCGroup: TGroupBox;
-    Coolant2: TEdit;
-    Label6: TLabel;
-    Label4: TLabel;
-    Coolant1: TEdit;
-    DriveMode: TComboBox;
-    Steering: TMaskEdit;
-    ScrollSteering: TScrollBar;
-    BrakePedal: TScrollBar;
-    BrakeR: TEdit;
-    BrakeF: TEdit;
-    AccelPedal: TScrollBar;
-    AccelR: TEdit;
-    AccelL: TEdit;
-    LabelAccelL: TLabel;
-    LabelAccelR: TLabel;
-    LabelBrakeF: TLabel;
-    LabelBrakeR: TLabel;
-    LabelSteering: TLabel;
-    Label9: TLabel;
     CenterButton: TButton;
     LeftButton: TButton;
     RightButton: TButton;
     UpButton: TButton;
     DownButton: TButton;
-    timer1000ms: TTimer;
-    Memorator: TCheckBox;
-    AnalogNodesList: TCheckListBox;
-    PowerNodesList: TCheckListBox;
-    ScrollRegen: TScrollBar;
-    Regen: TEdit;
-    Label27: TLabel;
-    PoweredDevs: TLabel;
-    PowerNodeError: TButton;
-    LVPower: TCheckBox;
+    DeviceControls: TPageControl;
+    Label4: TLabel;
+    ShutdownR: TLabel;
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure goOnBusClick(Sender: TObject);
     procedure SendCANADCClick(Sender: TObject);
     procedure CanDevicesChange(Sender: TObject);
-    procedure ScrollSteeringChange(Sender: TObject);
-    procedure SteeringChange(Sender: TObject);
     procedure TSClick(Sender: TObject);
     procedure RTDMClick(Sender: TObject);
     procedure StartClick(Sender: TObject);
     procedure CrashClick(Sender: TObject);
     procedure ClearClick(Sender: TObject);
-    procedure PDMClick(Sender: TObject);
-    procedure FLSpeedClick(Sender: TObject);
-    procedure FRSpeedClick(Sender: TObject);
-    procedure PedalsClick(Sender: TObject);
-    procedure IMUClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure GetADCClick(Sender: TObject);
     procedure GetADCMinMaxClick(Sender: TObject);
-    procedure BMSClick(Sender: TObject);
-    procedure IMDClick(Sender: TObject);
-    procedure BSPDClick(Sender: TObject);
-    procedure timer200msTimer(Sender: TObject);
     procedure timer10msTimer(Sender: TObject);
-    procedure AccelPedalChange(Sender: TObject);
-    procedure BrakePedalChange(Sender: TObject);
     procedure SendADCClick(Sender: TObject);
-    procedure timer100msTimer(Sender: TObject);
     procedure HVForceClick(Sender: TObject);
     procedure EmuMasterClick(Sender: TObject);
     procedure CenterButtonClick(Sender: TObject);
-    procedure timer1000msTimer(Sender: TObject);
-    procedure MemoratorClick(Sender: TObject);
-    procedure ScrollRegenChange(Sender: TObject);
-    procedure PowerNodeErrorClick(Sender: TObject);
-    procedure PowerNodesListClick(Sender: TObject);
-    procedure CANBMSClick(Sender: TObject);
-    procedure IVTClick(Sender: TObject);
-    procedure LVPowerClick(Sender: TObject);
+    procedure AddOutput(const Str : String);
   private
     { Private declarations }
     StartTime: TDateTime;
@@ -211,21 +140,14 @@ type
     Sanityfail : Boolean;
     CANFail : Boolean;
 
-
     procedure CanChannel1CanRx(Sender: TObject);
-    function InterPolateSteering(SteeringAngle : Integer) : Word;
-
+ //   function InterPolateSteering(SteeringAngle : Integer) : Word;
+    procedure addtab(pform : pForm; const FormClass : TFormClass );
 
 //    procedure UpdateOutput;
 
   public
     { Public declarations }
-    AnalogNodes : TAnalogNodeListHandler;
-    PowerNodes : TPowerNodeHandler;
-    BMSDevice : TBMSHandler;
-    IVTDevice : TIVTHandler;
-    InverterR : TInverterHandler;
-    InverterL : TInverterHandler;
     function CanSend(id: Longint; var msg; dlc, flags: Cardinal): integer;
     procedure PopulateList;
   end;
@@ -235,7 +157,7 @@ var
 
 implementation
 
-uses DateUtils, canlib, consts;
+uses DateUtils, canlib, consts, devicelist;
 
 {$R *.dfm}
 
@@ -313,147 +235,6 @@ begin
   end;
 end;
 
-
-procedure TMainForm.IMDClick(Sender: TObject);
-begin
-  PDMClick(nil);
-end;
-
-function TMainForm.InterPolateSteering(SteeringAngle : Integer) : Word;
-   var
-     i, dx, dy : Integer;
-
-   const
-     Input : Array[0..20] of Integer  = ( -100,-90,-80,-70,-60,-50,-40,-30,-20,-10,
-                                  0,10,20,30,40,50,60,70,80,90,100 );
-
-     Output  : Array[0..20] of Word = ( 1210,1270,1320,1360,1400,1450,1500,1540,1570,1630,
-                                1680,1720,1770,2280,2700,3150,3600,4100,4700,5000,5500 );
-   // output steering range. +-100%
-   begin
-      if SteeringAngle < Input[0] then
-      begin
-         result := Output[0];
-         exit;
-      end;
-
-      if SteeringAngle > Input[Length(Input)-1] then
-      begin
-         result := Output[Length(Output)-1];
-         exit;
-      end;
-
-    // loop through input values table till we find space where requested fits.
-      i := 0;
-      while Input[i+1] < SteeringAngle do inc(i);
-
-      // interpolate
-      dx := Input[i+1] - Input[i];
-      dy := Output[i+1] - Output[i];
-      Result := Round( Output[i] + ((SteeringANgle - Input[i]) * dy / dx) );
-
-   end;
-
-
-procedure TMainForm.IVTClick(Sender: TObject);
-begin
-  IVTDevice.Enabled := IVT.checked;
-end;
-
-procedure TMainForm.LVPowerClick(Sender: TObject);
-begin
-  PowerNodes.setPower(DeviceIDType.LV, LVPower.checked);
-  PoweredDevs.Caption := PowerNodes.listPowered;
-end;
-
-procedure TMainForm.MemoratorClick(Sender: TObject);
-var
-  msg: array[0..7] of byte;
-  CurTime : TDateTime;
-  Year, Month, Day, Hour, Min, Sec, Msec : Word;
-
-begin
-    CurTime := Now;
-
-    DecodeTime(CurTime, Hour, Min, Sec, Msec );
-    DecodeDate(CurTime, Year, Month, Day);
-    //, myMilli);
-    msg[0] := Year-2000;  // insert an IVT value here.
-    msg[1] := Month;
-    msg[2] := Day;
-    msg[3] := Hour;
-    msg[4] := Min;
-    msg[5] := Sec;
-    with CanChannel1 do
-    begin
-      if Active then
-      begin
-        if Memorator.Checked then
-        begin
-          CanSend($7B,msg,6,0);  // IVT
-        end;
-      end;
-    end;
-end;
-
-procedure TMainForm.PDMClick(Sender: TObject);
-var
-  msg: array[0..7] of byte;
-begin
-  if EmuMaster.checked then
-  begin
-    if BMS.checked then msg[0] := 1 else msg[0] := 0;
-    if IMD.checked then msg[1] := 1 else msg[1] := 0;
-    if BSPD.checked then msg[2] := 1 else msg[2] := 0;
-
-    if ShutD.checked then msg[6] := 0 else msg[6] := 1;
-
-
-    msg[1] := msg[1];//+badvalue;
-   // if badvalue>0 then badvalue := badvalue-1;
-  
-    msg[3] := 100;
-    msg[4] := 100;
-    msg[5] := 0;
-   // msg[6] := 0;
-    msg[7] := msg[6]; // checked to be equal.
-
-    with CanChannel1 do
-    begin
-      if Active then
-      begin
-        if PDM.Checked then
-        begin
-          CanSend($520,msg,8,0);  // PDM
-        end;
-      end;
-    end;
-  end;
-end;
-
-procedure TMainForm.PedalsClick(Sender: TObject);
-
-var
-  msg: array[0..7] of byte;
-begin
-  if EmuMaster.checked then
-  begin
-    msg[0] := 0;
-    msg[1] := 0;
-    msg[2] := 0;
-    with CanChannel1 do
-    begin
-      if Active then
-      begin
-        if Pedals.Checked then
-        begin
-          SendCANADCClick(nil);
-        end;
-      end;
-    end;
-  end;
-end;
-
 procedure TMainForm.PopulateList;
 var
   i : Integer;
@@ -471,24 +252,6 @@ begin
     CanDevices.ItemIndex := 0;
 end;
 
-procedure TMainForm.PowerNodeErrorClick(Sender: TObject);
-var
-  msg: array[0..7] of byte;
-begin
-  msg[0] := 36;
-  msg[1] := 4;
-  msg[5] := 112; // send error that output switched off unexpectedly.
-  PowerNodes.setPower(DeviceIDType.IVT, false);
-  MainForm.PoweredDevs.Caption := PowerNodes.listPowered;
-  CanSend(600, msg, 6, 0);
-end;
-
-procedure TMainForm.PowerNodesListClick(Sender: TObject);
-begin
-  PowerNodes.enabled(PowerNodesList.ItemIndex, PowerNodesList.Checked[PowerNodesList.ItemIndex]);
-  PoweredDevs.Caption := PowerNodes.listPowered;
-end;
-
 procedure TMainForm.RTDMClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
@@ -502,23 +265,6 @@ begin
     end;
   end;
 end;
-
-procedure TMainForm.BrakePedalChange(Sender: TObject);
-begin
-   BrakeF.Text := BrakePedal.Position.ToString;
-   BrakeR.Text := BrakePedal.Position.ToString;
-end;
-
-procedure TMainForm.ScrollRegenChange(Sender: TObject);
-begin
-  Regen.Text := ScrollRegen.Position.ToString;
-end;
-
-procedure TMainForm.ScrollSteeringChange(Sender: TObject);
-begin
-  Steering.Text := ScrollSteering.Position.ToString;
-end;
-
 
 
 procedure TMainForm.SendADCClick(Sender: TObject);
@@ -548,98 +294,24 @@ which is nowadays 16 bit in delphi. }
 const
   DrivingModeValue : array[0..7] of word = ( 5, 10,15,20,25,30,45, 65 );
 begin
-  with CanChannel1 do begin
-    if Boolean ( SendADC.checked ) then  // send our 'fake' adc data from form input.
-    begin
-      msg[0] := StrToInt(Steering.Text);
-      msg[1] := StrToInt(AccelL.Text);
-      msg[2] := StrToInt(AccelR.Text);
-      msg[3] := StrToInt(BrakeF.Text);
-      msg[4] := StrToInt(BrakeR.Text);
-      msg[5] := DrivingModeValue[DriveMode.ItemIndex];
-      msg[6] := StrToInt(Coolant1.Text);
-      msg[7] := StrToInt(Coolant2.Text);
-      CanSend(AdcSimInput_ID+1,msg,8,0);
-      end;
-      //Output.Items.Add('ADCSent() : '+TimeToStr(System.SysUtils.Now));
-    end;
-end;
-
-procedure TMainForm.SteeringChange(Sender: TObject);
-begin
-  ScrollSteering.position := StrToInt(Steering.Text);
- // Output.Items.Add(IntToStr(InterPolateSteering(StrToInt((Steering.Text)))));
-end;
-
-procedure TMainForm.timer1000msTimer(Sender: TObject);
-begin
-  if EmuMaster.checked then
+  if Boolean ( SendADC.checked ) then  // send our 'fake' adc data from form input.
   begin
-    MemoratorClick(nil);
+    msg[0] := StrToInt(AnalogNodesForm.Steering.Text);
+    msg[1] := StrToInt(AnalogNodesForm.AccelL.Text);
+    msg[2] := StrToInt(AnalogNodesForm.AccelR.Text);
+    msg[3] := StrToInt(AnalogNodesForm.BrakeF.Text);
+    msg[4] := StrToInt(AnalogNodesForm.BrakeR.Text);
+    msg[5] := DrivingModeValue[AnalogNodesForm.DriveMode.ItemIndex];
+    msg[6] := StrToInt(AnalogNodesForm.Coolant1.Text);
+    msg[7] := StrToInt(AnalogNodesForm.Coolant2.Text);
+    CanSend(AdcSimInput_ID+1,msg,8,0);
   end;
+  Output.Items.Add('ADCSent() : '+TimeToStr(System.SysUtils.Now));
 end;
-
-procedure TMainForm.timer100msTimer(Sender: TObject);
-var
-  msg: array[0..5] of byte;
-begin
-
-  if EmuMaster.checked then
-  begin
-        InverterRStat.Caption := IntToStr(InverterR.getStatus);
-        InverterLStat.Caption := IntToStr(InverterL.getStatus);
-  end;
-
-  if IVTCAN1.checked then
-  begin
-  if Active then
-
-    msg[0] := 0;
-    msg[1] := 1;
-    msg[2] := 0;
-    msg[3] := 0;
-    msg[4] := 0;
-    msg[5] := 1;
-    with CanChannel1 do begin
-      if Active then
-      CanSend($521, msg, 6 { sizeof(msg) }, 0);
-    end;
-        msg[0] := 1;
-        msg[4] := $50;
-        msg[5] := $3C;
-
-    with CanChannel1 do begin
-      if Active then
-      CanSend($522, msg, 6 { sizeof(msg) }, 0);
-    end;
-        msg[0] := 2;
-    with CanChannel1 do begin
-      if Active then
-      CanSend($523, msg, 6 { sizeof(msg) }, 0);
-    end;
-
-  end;
-end;
-
 
 procedure TMainForm.timer10msTimer(Sender: TObject);
-
 begin
-//  PDMClick(nil);
-//  IVTClick(nil);
-//  CANBMSClick(nil);
- // SendNextData;
-end;
-
-procedure TMainForm.timer200msTimer(Sender: TObject);
-begin
-  if EmuMaster.checked then
-  begin
-    PDMClick(nil);
-    CANBMSClick(nil);
-    //IVTClick(nil);
-  end;
- // UpdateOutput;
+  Devices.processCyclic;
 end;
 
 procedure TMainForm.TSClick(Sender: TObject);
@@ -652,30 +324,6 @@ begin
     begin
       Output.Items.Add('Sending TS');
       CanSend( AdcSimInput_ID+2, msg, 1 { sizeof(msg) }, 0);
-    end;
-  end;
-end;
-
-procedure TMainForm.IMUClick(Sender: TObject);
-var
-  msg: array[0..7] of byte;
-begin
-  if EmuMaster.checked then
-  begin
-    msg[0] := 0;
-
-    msg[1] := 0;
-    msg[2] := 0;
-
-    with CanChannel1 do
-    begin
-      if Active then
-      begin
-        if PDM.Checked then
-        begin
-          CanSend($772,msg,3,0);  // inverter NMT response
-        end;
-      end;
     end;
   end;
 end;
@@ -770,39 +418,25 @@ begin
   msg[0] := 1;
   msg[1] := 0;
   msg[2] := 0;
-
-  with CanChannel1 do
-  begin
-    if Active then
-    begin
-      if FLSpeed.Checked then
-      begin
-        CanSend( AdcSimInput_ID+5,msg,3,0);
-      end;
-    end;
-  end;
-
+  CanSend( AdcSimInput_ID+5,msg,3,0);
 end;
 
 procedure TMainForm.EmuMasterClick(Sender: TObject);
 begin
   if EmuMaster.Checked then
   begin
-    CanDeviceGroup.Visible := true;
-    PDMGroup.Visible := true;
-    PowerNodes.setPower(LV, LVPower.checked);
-    PoweredDevs.Caption := PowerNodes.listPowered;
+//    CanDeviceGroup.Visible := true;
+    DeviceControls.Visible := true;
+    Power.setPower(LV, PowerNodesForm.LVPower.checked);
   end
   else
   begin
-    CanDeviceGroup.Visible := false;
-    PDMGroup.Visible := false;
-
-    PowerNodes.setPower(LV, false); // should remove all power.
-
-    PoweredDevs.Caption := PowerNodes.listPowered;
+//    CanDeviceGroup.Visible := false;
+    DeviceControls.Visible := false;
+    Power.setPower(LV, false); // should remove all power.
   end;
 end;
+
 
 procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
@@ -829,16 +463,55 @@ begin
 
 end;
 
+procedure TMainForm.AddOutput(const Str: String);
+begin
+   Output.Items.Add(str);
+end;
+
+procedure TMainForm.addtab(pform : pForm; const FormClass : TFormClass );
+var
+  tabSheet : TTabSheet;
+begin
+  tabSheet := TTabSheet.Create(DeviceControls);
+  pform^ := FormClass.Create(tabSheet);
+  pform^.BorderStyle := bsNone;
+  pform^.align := alClient;
+  pform^.Top := 0;
+  pform^.Left := 0;
+  tabSheet.PageControl := DeviceControls;
+  pform^.Parent := tabSheet;
+  tabSheet.Caption := pform^.Caption;
+  pform^.Show;
+end;
+
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
-  PowerNodes := TPowerNodeHandler.Create(PowerNodesList);
-  AnalogNodes := TAnalogNodeListHandler.Create(PowerNodes, AnalogNodesList);
-  BMSDevice := TBMSHandler.Create(PowerNodes,DeviceIDtype.LV, $8);  // BMS is always powered if LV on, as it is supplying the power.
-  IVTDevice := TIVTHandler.Create(PowerNodes,DeviceIDtype.IVT, $511);
-  InverterL := TInverterHandler.Create(PowerNodes, DeviceIDtype.Inverters, $7E);
-  InverterR := TInverterHandler.Create(PowerNodes, DeviceIDtype.Inverters, $7F);
+  addtab(@PowerNodesForm, TPowerNodesForm);
+  addtab(@AnalogNodesForm, TAnalogNodesForm);
+  addtab(@InverterForm, TInverterForm);
+  addtab(@PDMForm, TPDMForm);
+  addtab(@BMSForm, TBMSForm);
+  addtab(@IVTForm, TIVTForm);
+  addtab(@MemoratorForm, TMemoratorForm);
+  addtab(@IMUForm, TIMUForm);
+//  addtab(@FrontSpeedForm, TFrontSpeedForm);
 
-  PoweredDevs.Caption := PowerNodes.listPowered;
+  Devices := TDevices.Create;
+
+  Power := TPowerHandler.Create(PowerNodesForm.PowerNodesList);
+  AnalogNodes := TAnalogNodeListHandler.Create(Power, AnalogNodesForm.AnalogNodesList);
+  BMSDevice := TBMSHandler.Create(Power,DeviceIDtype.LV, $8);
+  // BMS is always powered if LV on, as it is supplying the power.
+  PDMDevice := TPDMHandler.Create(Power,DeviceIDtype.LV, $520);
+  IMUDevice := TIMUHandler.Create(Power,DeviceIDType.Front2, $0);
+  IVTDevice := TIVTHandler.Create(Power,DeviceIDtype.IVT, $511);
+  MemoratorDevice := TMemoratorHandler.Create(Power, DeviceIDType.Front1, $7B);
+  InverterL1 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7E);
+  InverterL2 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7C);
+  InverterR1 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7F);
+  InverterR2 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7D);
+//  FrontLSpeedDevice := TFrontSpeedHandler.Create(Power, DeviceIDType.Front2, $70);
+//  FrontRSpeedDevice := TFrontSpeedHandler.Create(Power, DeviceIDType.Front2, $71);
 
   try
     CanChannel1 := TCanChannelEx.Create(Self);
@@ -862,55 +535,8 @@ end;
 procedure TMainForm.FormShow(Sender: TObject);
 begin
   PopulateList;
-  PoweredDevs.Caption := PowerNodes.listPowered;
 end;
 
-
-procedure TMainForm.FLSpeedClick(Sender: TObject);
-var
-  msg: array[0..7] of byte;
-begin
-  if EmuMaster.checked then
-  begin
-    msg[0] := 0;
-    msg[1] := 0;
-    msg[2] := 0;
-
-    with CanChannel1 do
-    begin
-      if Active then
-      begin
-        if FLSpeed.Checked then
-        begin
-          CanSend($770,msg,3,0);
-        end;
-      end;
-    end;
-  end;
-end;
-
-procedure TMainForm.FRSpeedClick(Sender: TObject);
-var
-  msg: array[0..7] of byte;
-begin
-  if EmuMaster.checked then
-  begin
-    msg[0] := 0;
-    msg[1] := 0;
-    msg[2] := 0;
-
-    with CanChannel1 do
-    begin
-      if Active then
-      begin
-        if FRSpeed.Checked then
-        begin
-          CanSend($771,msg,3,0);
-        end;
-      end;
-    end;
-  end;
-end;
 
 procedure TMainForm.GetADCClick(Sender: TObject);
 var
@@ -945,24 +571,6 @@ begin
 
     end;
   end;
-end;
-
-
-procedure TMainForm.AccelPedalChange(Sender: TObject);
-begin
-   AccelL.Text := AccelPedal.Position.ToString;
-   AccelR.Text := AccelPedal.Position.ToString;
-end;
-
-
-procedure TMainForm.BMSClick(Sender: TObject);
-begin
- // PDMClick(nil);
-end;
-
-procedure TMainForm.BSPDClick(Sender: TObject);
-begin
- // PDMClick(nil);
 end;
 
 procedure TMainForm.CenterButtonClick(Sender: TObject);
@@ -1020,10 +628,6 @@ begin
   end;
 end;
 
-procedure TMainForm.CANBMSClick(Sender: TObject);
-begin
-//  bmsdevice.Enabled := CANBMS.Checked;
-end;
 
 procedure TMainForm.CanChannel1CanRx(Sender: TObject);
 var
@@ -1063,6 +667,7 @@ begin
                system.Write(logfile, ' ':4);
            WriteLn(logfile,' ' + formattedDateTime:12);
         end;
+
         case id of
 
 
@@ -1117,6 +722,18 @@ begin
                           BSPDLED.Checked := true;
                            if ( msg[6] >= 1 ) and ( msg[6] <=8 )then BSPDLED.Caption := 'BSPD b' + IntToStr(msg[6]);
                         end else BSPDLED.Checked := false;
+
+
+                        if msg[6] <> 0 then
+                        begin
+                          ShutdownR.Caption := 'Closed';
+                          Power.setPower( AllowHV, true );
+                        end
+                        else
+                        begin
+                          ShutdownR.Caption := 'Open';
+                          Power.setPower( AllowHV, false );
+                        end;
 
                         //if msg[4] <>0 then IMDLED.Checked := true else IMDLED.Checked := false;
                        // if msg[5] <>0 then BMSLED.Checked := true else BMSLED.Checked := false;
@@ -1222,8 +839,9 @@ begin
                            else
                              str := IntToStr(msg[0])+':';
                            end;
-
+                           {$IfDef Processdev}
                            case msg[1] of
+
                               PDMReceived, PDMReceived+100, PDMReceived+200 : str := str + 'PDM';
                               BMSReceived, BMSReceived+100, BMSReceived+200 : str := str + 'BMS';
                               {$IfDef HPF19}
@@ -1245,10 +863,14 @@ begin
                               IVTReceived+111, IVTReceived+211  : str := str + 'IVTU1';
                               IVTReceived+112, IVTReceived+212  : str := str + 'IVTU2';
                               IVTReceived+115, IVTReceived+215  : str := str + 'IVTW';
-                           else
-                               str := str + IntToStr(msg[1]);
-                           end;
 
+
+                           else
+                           {$EndIf}
+                               str := str + IntToStr(msg[1]);
+                           {$IfDef Processdev}
+                           end;
+                           {$EndIf}
                            Output.Items.Add('CANError('+ str +','+IntToStr((msg[5]*16777216+msg[4]*65536+msg[3]*256+msg[2]))+') : '+formattedDateTime);
                          end
                     else
@@ -1407,68 +1029,27 @@ begin
                     SpeedFRR.Caption := IntToStr(smallint(msg[3]+256*msg[2]));
                     SpeedFLR.Caption := IntToStr(smallint(msg[7]+256*msg[6]));
                  end;
-
           else
-
-
-
+            if EmuMaster.checked then
+              Devices.CANReceive(msg,dlc,id);
           end;
 
-          if EmuMaster.checked then
           case id of
-
-              NodeCmd_ID : begin    // power node command.
-           //       for example: [3][1][255][255] will close all switches on node 3.
-                  PowerNodes.CANReceive(msg, dlc, id );
-              end;
-
-              $80 :  begin    // canopen sync., speed sensors at least.
+          $80 :  begin    // canopen sync., speed sensors at least.
                    // analog nodes.
-                 //  if SendADC.Checked then
-
-                   AnalogNodes.processSync;
-
-                   PowerNodes.processSync;
-
-                   IVTDevice.processSync;
-
-                   BMSDevice.processSync;
-
-                   InverterR.processSync;
-                   InverterL.processSync;
-
-                   if FLSpeed.Checked then
-                   begin
-                      for i := 0 to 7 do
-                      msgout[i] := 0;
-
-                      msgout[0] := 127;
-                   //   msgout[1] := byte(500);
-                      CanSend($1f0,msgout,8,0);
-                   end;
-
-                   if FRSpeed.Checked then
-                   begin
-                      for i := 0 to 7 do
-                      msgout[i] := 0;
-
-                      msgout[0] := 127;
-                 //     msgout[1] := byte(500);
-                      CanSend($1f1,msgout,8,0);
-                   end;
-
-                   SendCANADCClick(nil);
+               //    SendCANADCClick(nil);
 
                  end;
 
-          $0 :   begin  // received nmt message, respond.
+          $999 :   begin  // received nmt message, respond.
               //     Output.Items.Add(Format('NMT(%d %d)', [msg[0], msg[1]]));
 
                    Output.TopIndex := Output.Items.Count - 1;
+
+                   {$ifdef HPF19}
                    msgout[0] := 0;
                    msgout[1] := 0;
                    msgout[2] := 0;
-
                    if ( msg[0] = $81 ) or ( msg[0] = $82 ) or ( msg[0] = $0 ) then       // reset
                    begin
 
@@ -1484,29 +1065,8 @@ begin
                           msg[0] := 0;
                           CanSend($608, msg, 1, 0); // tell ECU to not use can 'ADC' values for testing.
                        end;
-
-                     if (msg[1] = 0) or ( msg[1] = 112 ) and FLSpeed.Checked then
-                     begin
-                        FLSpeedClick(nil);
                      end;
-
-                     if (msg[1] = 0) or ( msg[1] = 113 ) and FRSpeed.Checked then
-                     begin
-                        FRSpeedClick(nil);
-                     end;
-
-                     if (msg[1] = 0) or ( msg[1] = 0 ) and PDM.checked then
-                     begin
-                        PDMClick(nil);
-                     end;
-
-                     if (msg[1] = 0) or ( msg[1] = 0 ) and Pedals.Checked then
-                     begin
-                      //  PedalsClick(nil);
-                        // Check(CanChannel1.Write($520,msg,3,0);  // PDM response
-                     end;
-
-                   end;
+                    {$endif}
 
                    if ( msg[1] = $80 ) or ( msg[0] = $0 ) then begin end; // go pre operational
                  end;

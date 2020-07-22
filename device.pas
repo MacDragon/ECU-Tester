@@ -2,7 +2,7 @@ unit device;
 
 interface
 
-uses PowerNodeHandler, global;
+uses PowerHandler, global;
 
 type
   TDevice = class(TObject)
@@ -13,8 +13,8 @@ type
     function isPowered: boolean;
 
   public
-    constructor Create( const powerhandler : TPowerNodeHandler; const powersource : DeviceIDtype; const can_id : Integer );
-    procedure processSync; virtual; abstract;  // send any default sync messages;
+    constructor Create( const powerhandler : TPowerHandler; const powersource : DeviceIDtype; const can_id : Integer; const Cycletime : Integer = 1000 );
+    procedure processSync; virtual; // send any default sync messages;
 
     procedure processCyclic; virtual;
 
@@ -24,21 +24,43 @@ type
     procedure processpower;
     function getPowertype : DeviceIDType;
 
-    function CANReceive( const msg : array of byte; const dlc : byte; const id : integer ) : boolean; virtual;
+    function CANReceive( const msg : array of byte; const dlc : byte; const id : integer ) : boolean;
+    procedure Output( const str: String);
   protected
     connected : Boolean;
     connectionprocessed : boolean;
     poweredon : Boolean;
-    power : TPowerNodeHandler;
+    power : TPowerHandler;
     powertype : DeviceIDtype;
     can_id : Integer;
+
     procedure powerOn; virtual;
     procedure unplug; virtual;
+
+    procedure CyclicHandler; virtual;
+    procedure SyncHandler; virtual;
+    function CANHandler( const msg : array of byte; const dlc : byte; const id : integer ) : boolean; virtual;
+
+    function CanSend(id: Longint; var msg; dlc, flags: Cardinal): integer;
+  private
+    lastsend : TDateTime;
+    cycletime : Int64;
   end;
 
 implementation
 
-uses CanTest;
+uses CanTest, System.SysUtils, System.DateUtils, devicelist;
+
+procedure TDevice.Output(const str: String);
+begin
+  MainForm.AddOutput(str);
+end;
+
+function TDevice.CANHandler(const msg: array of byte; const dlc: byte;
+  const id: integer): boolean;
+begin
+
+end;
 
 function TDevice.CANReceive( const msg: array of byte; const dlc: byte;
   const id: integer): boolean;
@@ -55,19 +77,35 @@ begin
            PowerOn; // rerun power on.
          end;
      end;
+     $80 : SyncHandler;
+  else
+    CANHandler(msg, dlc, id);
   end;
 end;
 
-constructor TDevice.Create( const powerhandler : TPowerNodeHandler; const powersource : DeviceIDtype; const can_id : Integer );
+function TDevice.CanSend(id: Longint; var msg; dlc, flags: Cardinal): integer;
+begin
+  result := MainForm.CanSend(id, msg, dlc, flags);
+end;
+
+constructor TDevice.Create( const powerhandler : TPowerHandler; const powersource : DeviceIDtype; const can_id : Integer; const Cycletime : Integer );
 var
   I : Integer;
 begin
+  lastsend := Now;
+  self.cycletime := cycletime;
   power := powerhandler;
   powertype := powersource;
   poweredon := false;
   self.can_id := can_id;
   connectionprocessed := false;
-  powerhandler.registerdevice(self);
+  Devices.registerdevice(self);
+ // powerhandler.registerdevice(self);
+end;
+
+procedure TDevice.CyclicHandler;
+begin
+
 end;
 
 function TDevice.getPowertype: DeviceIDType;
@@ -118,7 +156,7 @@ begin
       begin
         if not connectionprocessed then
         begin
-          MainForm.Output.Items.Add('node connected');
+          Output('node connected');
           connectionprocessed := true;
         end;
       end;
@@ -128,19 +166,29 @@ begin
 end;
 
 
+procedure TDevice.processSync;
+begin
+  if Powered then SyncHandler;
+end;
+
 procedure TDevice.powerOn;
 begin
   if connected then
   begin
     poweredon := true;
-    MainForm.Output.Items.Add('Nodepower on');
+    Output('Nodepower on');
     connectionprocessed := true;
   end
 end;
 
 procedure TDevice.processCyclic;
 begin
-
+   if MilliSecondsBetween( Now, lastsend ) > CycleTime-1 then
+   if powered then
+   begin
+     lastsend := Now;
+     CyclicHandler;
+   end;
 end;
 
 procedure TDevice.setEnabled(const Value: boolean);
@@ -162,14 +210,19 @@ begin
   end;
 end;
 
+procedure TDevice.SyncHandler;
+begin
+
+end;
+
 procedure TDevice.unplug;
 begin
   if poweredon then
   begin
-      MainForm.Output.Items.Add('Nodepower off');
+      Output('Nodepower off');
       poweredon := false;
   end else
-    MainForm.Output.Items.Add('node disconnected');
+    Output('node disconnected');
 end;
 
 end.
