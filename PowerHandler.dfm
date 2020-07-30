@@ -69,66 +69,84 @@ object PowerNodesForm: TPowerNodesForm
     TabOrder = 3
     OnClick = PowerNodeErrorClick
   end
-  object PDMGroup: TGroupBox
-    Left = 230
-    Top = 8
-    Width = 82
-    Height = 99
-    Caption = 'PDM Flags'
-    TabOrder = 4
-    object IMD: TCheckBox
-      Left = 16
-      Top = 47
-      Width = 97
-      Height = 17
-      Caption = 'IMD'
-      TabOrder = 0
-    end
-    object BSPD: TCheckBox
-      Left = 16
-      Top = 71
-      Width = 97
-      Height = 17
-      Caption = 'BSPD'
-      TabOrder = 1
-    end
-    object BMS: TCheckBox
-      Left = 16
-      Top = 24
-      Width = 97
-      Height = 17
-      Caption = 'BMS'
-      TabOrder = 2
-    end
-  end
-  object ShutD: TCheckBox
+  object ShutDCockpit: TCheckBox
     Left = 328
     Top = 22
     Width = 97
     Height = 17
-    Caption = 'Shutdown 1'
+    Caption = 'Cockpit Button'
     Checked = True
     State = cbChecked
-    TabOrder = 5
+    TabOrder = 4
   end
-  object ShutD2: TCheckBox
+  object ShutDLeft: TCheckBox
     Left = 328
     Top = 45
     Width = 97
     Height = 17
-    Caption = 'Shutdown 2'
+    Caption = 'Left Button'
     Checked = True
     State = cbChecked
-    TabOrder = 6
+    TabOrder = 5
   end
-  object ShutD3: TCheckBox
+  object ShutDRight: TCheckBox
     Left = 328
     Top = 71
     Width = 97
     Height = 17
-    Caption = 'Shutdown 3'
+    Caption = 'Right Button'
+    Checked = True
+    State = cbChecked
+    TabOrder = 6
+  end
+  object Inertia: TCheckBox
+    Left = 328
+    Top = 94
+    Width = 97
+    Height = 17
+    Caption = 'Inertia Switch'
     Checked = True
     State = cbChecked
     TabOrder = 7
+  end
+  object Bots: TCheckBox
+    Left = 431
+    Top = 22
+    Width = 97
+    Height = 17
+    Caption = 'Bots'
+    Checked = True
+    State = cbChecked
+    TabOrder = 8
+  end
+  object BSPDBefore: TCheckBox
+    Left = 431
+    Top = 45
+    Width = 97
+    Height = 17
+    Caption = 'BSPD Before Del'
+    Checked = True
+    State = cbChecked
+    TabOrder = 9
+  end
+  object BSPDAfter: TCheckBox
+    Left = 431
+    Top = 68
+    Width = 97
+    Height = 17
+    Caption = 'BSPD After Del'
+    Checked = True
+    State = cbChecked
+    TabOrder = 10
+  end
+  object IMD: TCheckBox
+    Left = 431
+    Top = 94
+    Width = 97
+    Height = 17
+    Caption = 'IMD'
+    Checked = True
+    State = cbChecked
+    TabOrder = 11
   end
 end

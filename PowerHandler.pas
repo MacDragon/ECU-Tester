@@ -31,13 +31,14 @@ type
     LVPower: TCheckBox;
     HVon: TCheckBox;
     PowerNodeError: TButton;
-    PDMGroup: TGroupBox;
+    ShutDCockpit: TCheckBox;
+    ShutDLeft: TCheckBox;
+    ShutDRight: TCheckBox;
+    Inertia: TCheckBox;
+    Bots: TCheckBox;
+    BSPDBefore: TCheckBox;
+    BSPDAfter: TCheckBox;
     IMD: TCheckBox;
-    BSPD: TCheckBox;
-    BMS: TCheckBox;
-    ShutD: TCheckBox;
-    ShutD2: TCheckBox;
-    ShutD3: TCheckBox;
     procedure PowerNodesListClick(Sender: TObject);
     procedure LVPowerClick(Sender: TObject);
     procedure HVonClick(Sender: TObject);
@@ -107,7 +108,7 @@ begin
     TPowerNodeListItem.Create('Node33', TPowerNode33.Create(self, LV, 33, PowerNode33_ID, [None,None,None,None, Telemetry, Front1],[])),
     TPowerNodeListItem.Create('Node34', TPowerNode34.Create(self, LV, 34, PowerNode34_ID, [None,None,None,Inverters, ECU, Front2],[ECU])),
     TPowerNodeListItem.Create('Node35', TPowerNode35.Create(self, LV, 35, PowerNode35_ID, [None,None,LeftFans,RightFans, LeftPump, RightPump],[])),
-    TPowerNodeListItem.Create('Node36', TPowerNode36.Create(self, LV, 36, PowerNode36_ID, [Buzzer,IVT,None,None, None, None],[])),
+    TPowerNodeListItem.Create('Node36', TPowerNode36.Create(self, LV, 36, PowerNode36_ID, [None, Brake,Buzzer,IVT,Accu,AccuFan],[])),
     TPowerNodeListItem.Create('Node37', TPowerNode37.Create(self, LV, 37, PowerNode37_ID, [None,None,None,None, Current, TSAL],[]))
   );
 

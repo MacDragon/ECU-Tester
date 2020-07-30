@@ -54,6 +54,14 @@ var
 begin
   for I := 0 to 7 do
     msgout[i] := 0;
+
+  if PowerNodesForm.Inertia.Checked then inc(msgout[0],1);
+                                                      // 2
+  if PowerNodesForm.BSPDAfter.Checked then inc(msgout[0],4); //0b00011100
+  if PowerNodesForm.BSPDBefore.Checked then inc(msgout[0],8);
+  if PowerNodesForm.BOTS.Checked then inc(msgout[0],16);
+
+  // [x][x][x][BOTS][BSPD before delay][BSPD after delay][x][Inertia Switch]
   CanSend(can_id,msgout,3,0);
 end;
 
@@ -64,9 +72,9 @@ var
 begin
   for I := 0 to 7 do
     msgout[i] := 0;
-  if PowerNodesForm.ShutD.Checked then inc(msgout[0],4); //0b00011100
-  if PowerNodesForm.ShutD2.Checked then inc(msgout[0],8);
-  if PowerNodesForm.ShutD3.Checked then inc(msgout[0],16);
+  if PowerNodesForm.ShutDCockpit.Checked then inc(msgout[0],4); //0b00011100
+  if PowerNodesForm.ShutDLeft.Checked then inc(msgout[0],8);
+  if PowerNodesForm.ShutDRight.Checked then inc(msgout[0],16);
   CanSend(can_id,msgout,4,0);
 end;
 
@@ -89,6 +97,12 @@ var
 begin
   for I := 0 to 7 do
     msgout[i] := 0;
+
+  if PowerNodesForm.IMD.Checked then
+    msgout[5] := 10      // 10 hz = normal operation.
+  else
+    msgout[5] := 50;     // 50 hz = IMD triggered
+
   CanSend(can_id,msgout,7,0);
 end;
 

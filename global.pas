@@ -5,27 +5,32 @@ interface
 uses Vcl.Forms;
 
 type
- DeviceIDtype = (
-	Buzzer,
-	Telemetry,
-	Front1,
-	Inverters,
-	ECU,
-	Front2,
-	LeftFans,
-	RightFans,
-	LeftPump,
-	RightPump,
-	IVT,
-	Current,
-	TSAL,
-  LV,
-  HV,
-  AllowHV,
-  None
-);
+  DeviceIDtype = (
+    Buzzer,
+    Telemetry,
+    Front1,
+    Inverters,
+    ECU,
+    Front2,
+    LeftFans,
+    RightFans,
+    LeftPump,
+    RightPump,
+    IVT,
+    Current,
+    TSAL,
+    Accu,
+    AccuFan,
+    Brake,
+    LV,
+    HV,
+    AllowHV,
+    None
+  );
 
- DeviceIDtypes = set of DeviceIDtype;
+  TMsgArray = array[0..7] of byte;
+
+  DeviceIDtypes = set of DeviceIDtype;
 
 
  pForm = ^TForm;

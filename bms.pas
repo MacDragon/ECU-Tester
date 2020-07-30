@@ -13,7 +13,10 @@ type
     BMSVolt: TEdit;
     Label1: TLabel;
     Connected: TCheckBox;
+    BMSError: TCheckBox;
+    BMSErrorCode: TComboBox;
     procedure ConnectedClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
   public
@@ -39,6 +42,25 @@ procedure TBMSHandler.SyncHandler;
 var
   msg: array[0..7] of byte;
 begin
+  msg[0] := byte(BMSForm.BMSError.Checked);//+badvalue;
+  if msg[0] <> 0 then
+  begin
+    msg[1] := BMSForm.BMSErrorCode.ItemIndex;
+  end;
+  // if badvalue > 0 then badvalue := badvalue-1;
+  msg[2] := 0;
+  msg[3] := 0;
+  msg[4] := 0;
+  msg[5] := 0;
+  msg[6] := 0;   // constant to verify message.
+  msg[7] := 0;
+  // 		uint16_t voltage = CanState.BMSVolt.data[2]*256+CanState.BMSVolt.data[3];
+  //	if ( CanState.BMSVolt.dlcsize == 8 &&  voltage > 480 && voltage < 600 ) // check data sanity
+
+  CanSend($9,msg,8,0);
+
+
+
   msg[0] := 0;//+badvalue;
   // if badvalue > 0 then badvalue := badvalue-1;
   msg[1] := 0;
@@ -58,6 +80,11 @@ end;
 procedure TBMSForm.ConnectedClick(Sender: TObject);
 begin
   bmsdevice.Enabled := Connected.Checked;
+end;
+
+procedure TBMSForm.FormCreate(Sender: TObject);
+begin
+  BMSErrorCode.ItemIndex := 0;
 end;
 
 end.

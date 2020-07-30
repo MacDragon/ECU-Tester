@@ -229,7 +229,7 @@ begin
   with CanChannel1 do begin
     if active then
     begin
-      CanSend( AdcSimInput_ID+4, msg, 1 { sizeof(msg) }, 0);
+      CanSend( AdcSimInput_ID+2, msg, 1 { sizeof(msg) }, 0);
       Output.Items.Add('Sending Start');
     end;
   end;
@@ -256,12 +256,12 @@ procedure TMainForm.RTDMClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
- msg[0] := 1;
+ msg[3] := 1;
   with CanChannel1 do begin
     if active then
     begin
       Output.Items.Add('Sending RTDM');
-      CanSend( AdcSimInput_ID+3, msg, 1 { sizeof(msg) }, 0);
+      CanSend( AdcSimInput_ID+2, msg, 1 { sizeof(msg) }, 0);
     end;
   end;
 end;
@@ -318,7 +318,7 @@ procedure TMainForm.TSClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
- msg[0] := 1;
+ msg[1] := 1;
   with CanChannel1 do begin
   if active then
     begin
@@ -579,27 +579,27 @@ var
 begin
   if Sender = CenterButton then
   begin
-    msg[0] := 1;
+    msg[3] := 1;
   end;
 
   if Sender = LeftButton then
   begin
-    msg[0] := 2;
+    msg[3] := 2;
   end;
 
   if Sender = RightButton then
   begin
-    msg[0] := 4;
+    msg[3] := 4;
   end;
 
   if Sender = UpButton then
   begin
-    msg[0] := 8;
+    msg[3] := 8;
   end;
 
   if Sender = DownButton then
   begin
-    msg[0] := 16;
+    msg[3] := 16;
   end;
 
   with CanChannel1 do begin
@@ -724,7 +724,7 @@ begin
                         end else BSPDLED.Checked := false;
 
 
-                        if msg[6] <> 0 then
+                        if msg[7] <> 0 then
                         begin
                           ShutdownR.Caption := 'Closed';
                           Power.setPower( AllowHV, true );

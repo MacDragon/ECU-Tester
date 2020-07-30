@@ -89,6 +89,9 @@ begin
 
   if Powered then
   begin
+
+  // TODO deal with only allowing enabled when HV.
+
     if id = can_id+$400 then     // $47e
     begin
 
@@ -127,6 +130,20 @@ var
   msgout: array[0..7] of byte;
   i : integer;
 begin
+    if ( ( InverterStatus = 7 ) or ( InverterStatus = 15 ) ) and ( not Power.isPowered(DeviceIDtype.HV) ) then // inverters have lost HV, send error.
+    begin
+      msgout[0] := 0;          // siemens undervolt error.
+      msgout[1] := 16;
+      msgout[2] := 129;
+      msgout[3] := 93;
+      msgout[4] := 117;
+      msgout[5] := 2;
+      msgout[5] := 0;
+      msgout[5] := 0;
+      CanSend($80+can_id,msgout,8,0);
+      InverterStatus := 104; // set error state.
+    end;
+
     msgout[0] := InverterStatus;
     msgout[1] := 22;
     msgout[2] := 0;
@@ -140,6 +157,7 @@ begin
     msgout[1] := 22;//+badvalue;
 
     CanSend($380+can_id,msgout,4,0);
+
 end;
 
 procedure TInverterForm.ConnectedClick(Sender: TObject);
