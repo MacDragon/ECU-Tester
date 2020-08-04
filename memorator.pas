@@ -19,7 +19,7 @@ type
 
   TMemoratorHandler = class(TDevice)
   public
-    constructor Create( const powerhandler : TPowerHandler; const powersource : DeviceIDtype; const can_id : Integer );
+    constructor Create( const powerhandler : TPowerHandler; const powersource : DeviceIDtype; const can_id : Integer; const Channel : Integer );
   protected
     procedure CyclicHandler; override;
   end;
@@ -35,9 +35,9 @@ uses System.DateUtils, CanTest, powernode;
 {$R *.dfm}
 
 constructor TMemoratorHandler.Create(const powerhandler: TPowerHandler;
-  const powersource: DeviceIDtype; const can_id: Integer);
+  const powersource: DeviceIDtype; const can_id: Integer; const Channel : Integer);
 begin
-  inherited Create(powerhandler, powersource, can_id, 1000);
+  inherited Create(powerhandler, powersource, can_id, Channel, 1000);
 end;
 
 procedure TMemoratorHandler.CyclicHandler;

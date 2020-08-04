@@ -713,6 +713,14 @@ object MainForm: TMainForm
       Height = 204
       TabOrder = 24
     end
+    object UseCAN2: TCheckBox
+      Left = 84
+      Top = 47
+      Width = 97
+      Height = 17
+      Caption = 'UseCAN2'
+      TabOrder = 25
+    end
   end
   object timer10ms: TTimer
     Interval = 10

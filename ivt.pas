@@ -22,6 +22,7 @@ type
     procedure SyncHandler; override;
   private
     procedure sendIVT(msg0, msg1, msg2, msg3 : byte);
+  protected
     procedure unplug; override;
   end;
 

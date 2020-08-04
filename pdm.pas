@@ -10,7 +10,7 @@ uses
 type
   TPDMHandler = class(TDevice)
   public
-    constructor Create( const powerhandler : TPowerHandler; const powersource : DeviceIDtype; const can_id : Integer );
+    constructor Create( const powerhandler : TPowerHandler; const powersource : DeviceIDtype; const can_id : Integer; const Channel : Integer );
   private
     procedure unplug; override;
     procedure CyclicHandler; override;
@@ -75,9 +75,9 @@ begin
 end;
 
 constructor TPDMHandler.Create(const powerhandler: TPowerHandler;
-  const powersource: DeviceIDtype; const can_id: Integer);
+  const powersource: DeviceIDtype; const can_id: Integer; const Channel : Integer);
 begin
-  inherited Create(powerhandler, powersource, can_id, 20);
+  inherited Create(powerhandler, powersource, can_id, Channel, 20);
 end;
 
 

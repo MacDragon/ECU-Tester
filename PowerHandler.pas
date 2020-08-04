@@ -105,11 +105,11 @@ begin
   listptr := List;
 
   nodes := TArray<TPowerNodeListItem>.Create(
-    TPowerNodeListItem.Create('Node33', TPowerNode33.Create(self, LV, 33, PowerNode33_ID, [None,None,None,None, Telemetry, Front1],[])),
-    TPowerNodeListItem.Create('Node34', TPowerNode34.Create(self, LV, 34, PowerNode34_ID, [None,None,None,Inverters, ECU, Front2],[ECU])),
-    TPowerNodeListItem.Create('Node35', TPowerNode35.Create(self, LV, 35, PowerNode35_ID, [None,None,LeftFans,RightFans, LeftPump, RightPump],[])),
-    TPowerNodeListItem.Create('Node36', TPowerNode36.Create(self, LV, 36, PowerNode36_ID, [None, Brake,Buzzer,IVT,Accu,AccuFan],[])),
-    TPowerNodeListItem.Create('Node37', TPowerNode37.Create(self, LV, 37, PowerNode37_ID, [None,None,None,None, Current, TSAL],[]))
+    TPowerNodeListItem.Create('Node33', TPowerNode33.Create(self, LV, 33, PowerNode33_ID, 0, [None,None,None,None, Telemetry, Front1],[])),
+    TPowerNodeListItem.Create('Node34', TPowerNode34.Create(self, LV, 34, PowerNode34_ID, 0, [None,None,None,Inverters, ECU, Front2],[ECU])),
+    TPowerNodeListItem.Create('Node35', TPowerNode35.Create(self, LV, 35, PowerNode35_ID, 0, [None,None,LeftFans,RightFans, LeftPump, RightPump],[])),
+    TPowerNodeListItem.Create('Node36', TPowerNode36.Create(self, LV, 36, PowerNode36_ID, 0, [None, Brake,Buzzer,IVT,Accu,AccuFan],[])),
+    TPowerNodeListItem.Create('Node37', TPowerNode37.Create(self, LV, 37, PowerNode37_ID, 0, [None,None,None,None, Current, TSAL],[]))
   );
 
   for I := 0 to Length(nodes)-1 do

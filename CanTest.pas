@@ -108,6 +108,7 @@ type
     DeviceControls: TPageControl;
     Label4: TLabel;
     ShutdownR: TLabel;
+    UseCAN2: TCheckBox;
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -132,24 +133,25 @@ type
     { Private declarations }
     StartTime: TDateTime;
     CanChannel1: TCanChannelEx;
+    CanChannel2: TCanChannelEx;
     logFile, adcdata : TextFile;
     logOpen : Boolean;
     MainStatus : Word;
 
     ErrorPos : Word;
     Sanityfail : Boolean;
-    CANFail : Boolean;
+    CANFail, CANFail2 : Boolean;
 
     procedure CanChannel1CanRx(Sender: TObject);
+    procedure CanChannel2CanRx(Sender: TObject);
  //   function InterPolateSteering(SteeringAngle : Integer) : Word;
     procedure addtab(pform : pForm; const FormClass : TFormClass );
-
+    procedure PopulateList;
 //    procedure UpdateOutput;
-
   public
     { Public declarations }
     function CanSend(id: Longint; var msg; dlc, flags: Cardinal): integer;
-    procedure PopulateList;
+    function CanSend2(id: Longint; var msg; dlc, flags: Cardinal): integer;
   end;
 
 var
@@ -214,25 +216,46 @@ begin
       if not CANFail then
         Output.Items.Add('Error Sending to CAN');
       exception := true;
-      goOnBusClick(nil);
+    //  goOnBusClick(nil);
     end;
     if exception then CANFail := true else CANFail := false;
   end;
   result := 0;
 end;
 
+function TMainForm.CanSend2(id: Longint; var msg; dlc, flags: Cardinal): integer;
+var exception : Boolean;
+begin
+  if UseCAN2.Checked then
+  begin
+    exception := false;
+    with CanChannel2 do
+    begin
+      try
+        Check(Write(id, msg, dlc, flags), 'Write failed');
+      except
+        if not CANFail2 then
+          Output.Items.Add('Error Sending to CAN2');
+        exception := true;
+  //      goOnBusClick(nil);
+      end;
+      if exception then CANFail2 := true else CANFail2 := false;
+    end;
+    result := 0;
+  end else result := CanSend(id, msg, dlc, flags);
+end;
+
 procedure TMainForm.StartClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
+  i : integer;
 begin
- msg[0] := 1;
-  with CanChannel1 do begin
-    if active then
-    begin
-      CanSend( AdcSimInput_ID+2, msg, 1 { sizeof(msg) }, 0);
-      Output.Items.Add('Sending Start');
-    end;
-  end;
+  for i := 0 to 7 do msg[i] := 0;
+
+  msg[0] := 1;
+
+  CanSend( AdcSimInput_ID+2, msg, 8 { sizeof(msg) }, 0);
+  Output.Items.Add('Sending Start');
 end;
 
 procedure TMainForm.PopulateList;
@@ -243,6 +266,7 @@ begin
   SetLength(p, 64);
   CanDevices.Items.clear;
   CanChannel1.Options := [ccNoVirtual];
+  CanChannel2.Options := [ccNoVirtual];
   for i := 0 to CanChannel1.ChannelCount - 1 do
   begin
     if ansipos('Virtual', CanChannel1.ChannelNames[i]) = 0 then  // don't populate virtual channels.
@@ -255,15 +279,15 @@ end;
 procedure TMainForm.RTDMClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
+  i : integer;
 begin
- msg[3] := 1;
-  with CanChannel1 do begin
-    if active then
-    begin
-      Output.Items.Add('Sending RTDM');
-      CanSend( AdcSimInput_ID+2, msg, 1 { sizeof(msg) }, 0);
-    end;
-  end;
+  for i := 0 to 7 do msg[i] := 0;
+
+  msg[2] := 1;
+
+  Output.Items.Add('Sending RTDM');
+  CanSend( AdcSimInput_ID+2, msg, 8 { sizeof(msg) }, 0);
+
 end;
 
 
@@ -271,19 +295,17 @@ procedure TMainForm.SendADCClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin
-  with CanChannel1 do
+  if SendADC.checked then  // send our 'fake' adc data from form input.
   begin
-    if SendADC.checked then  // send our 'fake' adc data from form input.
-    begin
-      msg[0] := 1;
-      msg[1] := 99; // if received value in ID is not 0 assume true and switch to fakeADC over CAN.
-    end else
-        begin
-      msg[0] := 0;
-      msg[1] := 0; // if received value in ID is not 0 assume true and switch to fakeADC over CAN.
-    end;
-    if Active then CanSend(AdcSimInput_ID,msg,2,0);
+    msg[0] := 1;
+    msg[1] := 99; // if received value in ID is not 0 assume true and switch to fakeADC over CAN.
+  end else
+      begin
+    msg[0] := 0;
+    msg[1] := 0; // if received value in ID is not 0 assume true and switch to fakeADC over CAN.
   end;
+  CanSend(AdcSimInput_ID,msg,2,0);
+
   SendCANADC.Enabled := SendADC.Checked;
 end;
 
@@ -317,87 +339,105 @@ end;
 procedure TMainForm.TSClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
+  i : integer;
 begin
- msg[1] := 1;
-  with CanChannel1 do begin
-  if active then
-    begin
-      Output.Items.Add('Sending TS');
-      CanSend( AdcSimInput_ID+2, msg, 1 { sizeof(msg) }, 0);
-    end;
-  end;
+  for i := 0 to 7 do msg[i] := 0;
+  msg[1] := 1;
+
+  Output.Items.Add('Sending TS');
+  CanSend( AdcSimInput_ID+2, msg, 8 { sizeof(msg) }, 0);
 end;
 
 procedure TMainForm.goOnBusClick(Sender: TObject);
 var
   formattedDateTime : String;
 begin
-  with CanChannel1 do begin
-    if not Active then begin
-      Bitrate := canBITRATE_1M;
-      Channel := CanDevices.ItemIndex;
-      //  TCanChanOption = (ccNotExclusive, ccNoVirtual, ccAcceptLargeDLC);
-      //  TCanChanOptions = set of TCanChanOption;
-      Options := [ccNotExclusive];
-      Open;
-    //  SetHardwareFilters($20, canFILTER_SET_CODE_STD);
-    //  SetHardwareFilters($FE, canFILTER_SET_MASK_STD);
-      OnCanRx := CanChannel1CanRx;
-      BusActive := true;
-      CanDevices.Enabled := false;
-      onBus.Caption := 'On bus';
-      goOnBus.Caption := 'Go off bus';
-      StartTime := Now;
- //     SendCANADC.Enabled := true;
+  if not CanChannel1.Active then begin
 
-      AssignFile(logfile, 'canlog.txt');
-      AssignFile(adcdata, 'adcdata.txt');
-
-      if not logOpen then
-      begin
-         if FileExists('canlog.txt') then
-           Append(logfile)
-        else
-           ReWrite(logfile);
-        logOpen := true;
-      end;
-        if FileExists('adcdata.txt') then
-           Append(adcdata)
-        else
-           ReWrite(adcdata);
-      DateTimeToString(formattedDateTime, 'hh:mm:ss.zzzzzz', SysUtils.Now);
-
-      WriteLn(logfile,'Log: ' + formattedDateTime);
-      WriteLn(adcdata,'ADC saved on: ' + formattedDateTime);
-
-
-      SendADCClick(nil);
-
-      // startup power up sequence?
-
-    end
-    else begin
-      if logOpen then
-      begin
-        CloseFile(logFile);
-        CloseFile(adcdata);
-        logOpen := false;
-      end;
-      try
-        BusActive := false;
-      except
-
-      end;
-      onBus.Caption := 'Off bus';
-      goOnBus.Caption := 'Go on bus';
-      CanDevices.Enabled := true;
-      SendCANADC.Enabled := false;
-      Close;
+    if UseCAN2.Checked and ( CanDevices.Items.Count-1 < CanDevices.ItemIndex+1 ) then
+    begin
+      ShowMessage('Invalid Device Selection for two channels.');
+      exit;
     end;
 
-  //  if Active then Label1.Caption := 'Active' else Label1.Caption := 'Inactive';
+    CanChannel1.Bitrate := canBITRATE_1M;
+    CanChannel1.Channel := CanDevices.ItemIndex;
+    //  TCanChanOption = (ccNotExclusive, ccNoVirtual, ccAcceptLargeDLC);
+    //  TCanChanOptions = set of TCanChanOption;
+    CanChannel1.Options := [ccNotExclusive];
+    CanChannel1.Open;
+  //  SetHardwareFilters($20, canFILTER_SET_CODE_STD);
+  //  SetHardwareFilters($FE, canFILTER_SET_MASK_STD);
+    CanChannel1.OnCanRx := CanChannel1CanRx;
+    CanChannel1.BusActive := true;
 
+    if UseCAN2.Checked then
+    if not CanChannel2.Active then begin
+      CanChannel2.Bitrate := canBITRATE_1M;
+      CanChannel2.Channel := CanDevices.ItemIndex+1;
+    //    TCanChanOption = (ccNotExclusive, ccNoVirtual, ccAcceptLargeDLC);
+    //    TCanChanOptions = set of TCanChanOption;
+      CanChannel2.Options := [ccNotExclusive];
+      CanChannel2.Open;
+    //  SetHardwareFilters($20, canFILTER_SET_CODE_STD);
+    //  SetHardwareFilters($FE, canFILTER_SET_MASK_STD);
+      CanChannel2.OnCanRx := CanChannel2CanRx;
+      CanChannel2.BusActive := true;
+    end;
+
+//    Devices.OnBus := true;
+
+    CanDevices.Enabled := false;
+    UseCAN2.Enabled := false;
+    onBus.Caption := 'On bus';
+    goOnBus.Caption := 'Go off bus';
+    StartTime := Now;
+
+    AssignFile(logfile, 'canlog.txt');
+    AssignFile(adcdata, 'adcdata.txt');
+
+    if not logOpen then
+    begin
+       if FileExists('canlog.txt') then
+         Append(logfile)
+      else
+         ReWrite(logfile);
+      logOpen := true;
+    end;
+      if FileExists('adcdata.txt') then
+         Append(adcdata)
+      else
+         ReWrite(adcdata);
+    DateTimeToString(formattedDateTime, 'hh:mm:ss.zzzzzz', SysUtils.Now);
+
+    WriteLn(logfile,'Log: ' + formattedDateTime);
+    WriteLn(adcdata,'ADC saved on: ' + formattedDateTime);
+
+    SendADCClick(nil);
+  end
+  else begin
+    if logOpen then
+    begin
+      CloseFile(logFile);
+      CloseFile(adcdata);
+      logOpen := false;
+    end;
+    try
+      CanChannel1.BusActive := false;
+      CanChannel2.BusActive := false;
+  //    Devices.OnBus := false;
+    except
+
+    end;
+    onBus.Caption := 'Off bus';
+    goOnBus.Caption := 'Go on bus';
+    CanDevices.Enabled := true;
+    SendCANADC.Enabled := false;
+    UseCAN2.Enabled := true;
+    CanChannel1.Close;
+    CanChannel2.Close;
   end;
+
 end;
 
 procedure TMainForm.CanDevicesChange(Sender: TObject);
@@ -500,21 +540,22 @@ begin
 
   Power := TPowerHandler.Create(PowerNodesForm.PowerNodesList);
   AnalogNodes := TAnalogNodeListHandler.Create(Power, AnalogNodesForm.AnalogNodesList);
-  BMSDevice := TBMSHandler.Create(Power,DeviceIDtype.LV, $8);
+  BMSDevice := TBMSHandler.Create(Power,DeviceIDtype.LV, $8, 0);
   // BMS is always powered if LV on, as it is supplying the power.
-  PDMDevice := TPDMHandler.Create(Power,DeviceIDtype.LV, $520);
-  IMUDevice := TIMUHandler.Create(Power,DeviceIDType.Front2, $0);
-  IVTDevice := TIVTHandler.Create(Power,DeviceIDtype.IVT, $511);
-  MemoratorDevice := TMemoratorHandler.Create(Power, DeviceIDType.Front1, $7B);
-  InverterL1 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7E);
-  InverterL2 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7C);
-  InverterR1 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7F);
-  InverterR2 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7D);
+  PDMDevice := TPDMHandler.Create(Power,DeviceIDtype.LV, $520, 0);
+  IMUDevice := TIMUHandler.Create(Power,DeviceIDType.Front2, $0, 1);
+  IVTDevice := TIVTHandler.Create(Power,DeviceIDtype.IVT, $511, 1);
+  MemoratorDevice := TMemoratorHandler.Create(Power, DeviceIDType.Front1, $7B, 0);
+  InverterL1 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7E, 1);
+  InverterL2 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7C, 1);
+  InverterR1 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7F, 1);
+  InverterR2 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7D, 1);
 //  FrontLSpeedDevice := TFrontSpeedHandler.Create(Power, DeviceIDType.Front2, $70);
 //  FrontRSpeedDevice := TFrontSpeedHandler.Create(Power, DeviceIDType.Front2, $71);
 
   try
     CanChannel1 := TCanChannelEx.Create(Self);
+    CanChannel2 := TCanChannelEx.Create(nil);
   except
      ShowMessage('Error initialisiting, are KVASER drivers installed?');
      Application.Terminate();
@@ -523,6 +564,7 @@ begin
   CanChannel1.Channel := 0;
   Sanityfail := false;
   CANFail := false;
+  CANFail2 := false;
 
   Output.clear;
 end;
@@ -546,13 +588,7 @@ begin
   msg[1] := 0;
   msg[2] := 0;
 
-  with CanChannel1 do
-  begin
-    if Active then
-    begin
-        CanSend($21,msg,3,0);
-    end;
-  end;
+  CanSend($21,msg,3,0);
 end;
 
 procedure TMainForm.GetADCMinMaxClick(Sender: TObject);
@@ -563,20 +599,16 @@ begin
   msg[1] := 0;
   msg[2] := 0;
 
-  with CanChannel1 do
-  begin
-    if Active then
-    begin
-        CanSend($21,msg,3,0);
-
-    end;
-  end;
+  CanSend($21,msg,3,0);
 end;
 
 procedure TMainForm.CenterButtonClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
+  i : integer;
 begin
+  for i := 0 to 7 do msg[i] := 0;
+
   if Sender = CenterButton then
   begin
     msg[3] := 1;
@@ -602,13 +634,8 @@ begin
     msg[3] := 16;
   end;
 
-  with CanChannel1 do begin
-    if active then
-    begin
-      CanSend( AdcSimInput_ID+6, msg, 1, 0);
-      Output.Items.Add('Sending Control');
-    end;
-  end;
+  CanSend( AdcSimInput_ID+2, msg, 8, 0);
+  Output.Items.Add('Sending Control');
 end;
 
 procedure TMainForm.HVForceClick(Sender: TObject);
@@ -659,7 +686,7 @@ begin
         msgout[i] := 0;
         if logOpen then
         begin
-           system.Write(logfile, id:5, dlc:4,':');
+           system.Write(logfile, 1:2, id:5, dlc:4,':');
            for i := 0 to 7 do
              if i < dlc then
                system.Write(logfile, msg[i]:4)
@@ -1031,13 +1058,11 @@ begin
                  end;
           else
             if EmuMaster.checked then
-              Devices.CANReceive(msg,dlc,id);
+              Devices.CANReceive(msg,dlc,id,0);
           end;
 
           case id of
           $80 :  begin    // canopen sync., speed sensors at least.
-                   // analog nodes.
-               //    SendCANADCClick(nil);
 
                  end;
 
@@ -1076,6 +1101,54 @@ begin
       end;
 
 
+    end;
+  end;
+//  Output.Items.EndUpdate;
+end;
+
+
+
+procedure TMainForm.CanChannel2CanRx(Sender: TObject);
+var
+  dlc, flag, time: cardinal;
+  msg, msgout: array[0..7] of byte;
+  i : integer;
+  status : cardinal;
+  id: longint;
+  formattedDateTime, str : string;
+begin
+//  Output.Items.BeginUpdate;
+  with CanChannel2 do begin
+    while Read(id, msg, dlc, flag, time) >= 0 do begin
+      DateTimeToString(formattedDateTime, 'hh:mm:ss.zzzzzz', SysUtils.Now);
+      if flag = $20 then
+      begin
+        Output.Items.Add('Error Frame');
+        if Output.TopIndex > Output.Items.Count - 2 then
+        Output.TopIndex := Output.Items.Count - 1;
+        if logOpen then
+        begin
+           WriteLn(logfile, 'Error Frame ' + TimeToStr(SysUtils.Now));
+        end;
+
+      end
+      else
+      begin
+        for i := 0 to 7 do
+        msgout[i] := 0;
+        if logOpen then
+        begin
+           system.Write(logfile, 2:2, id:5, dlc:4,':');
+           for i := 0 to 7 do
+             if i < dlc then
+               system.Write(logfile, msg[i]:4)
+             else
+               system.Write(logfile, ' ':4);
+           WriteLn(logfile,' ' + formattedDateTime:12);
+        end;
+        if EmuMaster.checked then
+          Devices.CANReceive(msg,dlc,id,1);
+      end;
     end;
   end;
 //  Output.Items.EndUpdate;

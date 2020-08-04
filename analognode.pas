@@ -13,12 +13,19 @@ const
   AnalogNode9_ID  = 1680;
   AnalogNode10_ID	= 1682;
   AnalogNode11_ID	= 1684;
+  AnalogNode12_ID	= 1686;
+  AnalogNode13_ID	= 1688;
+  AnalogNode14_ID	= 1690;
+  AnalogNode15_ID	= 1692;
+  AnalogNode16_ID	= 1694;
+  AnalogNode17_ID	= 1696;
+  AnalogNode18_ID	= 1698;
 
-  AnalogNodeCount = 3;
+  AnalogNodeCount = 11;
 
 type
   TAnalogNode = class(TDevice)
-     constructor Create(powerhandler: TPowerHandler; powersource : DeviceIDType; node_id : Integer; can_id : Integer );
+     constructor Create(powerhandler: TPowerHandler; powersource : DeviceIDType; node_id : Integer; can_id : Integer; Channel : Integer );
   protected
     node_id : integer;
   end;
@@ -31,7 +38,43 @@ type
      procedure SyncHandler; override;
   end;
 
+  TAnalogNode10 = class(TAnalogNode)
+     procedure SyncHandler; override;
+  end;
+
   TAnalogNode11 = class(TAnalogNode)
+     procedure SyncHandler; override;
+  end;
+
+  TAnalogNode12 = class(TAnalogNode)
+     procedure SyncHandler; override;
+  end;
+
+
+  TAnalogNode13 = class(TAnalogNode)
+     procedure SyncHandler; override;
+  end;
+
+
+  TAnalogNode14 = class(TAnalogNode)
+     procedure SyncHandler; override;
+  end;
+
+
+  TAnalogNode15 = class(TAnalogNode)
+     procedure SyncHandler; override;
+  end;
+
+
+  TAnalogNode16 = class(TAnalogNode)
+     procedure SyncHandler; override;
+  end;
+
+  TAnalogNode17 = class(TAnalogNode)
+     procedure SyncHandler; override;
+  end;
+
+  TAnalogNode18 = class(TAnalogNode)
      procedure SyncHandler; override;
   end;
 
@@ -97,18 +140,28 @@ uses CanTest, devicelist;
 var
   Node1 : TAnalogNode1;
   Node9 : TAnalogNode9;
+  Node10 : TAnalogNode10;
   Node11 : TAnalogNode11;
+ // Node11 : TAnalogNode11;
 
-  nodes : array[0..2] of TAnalogNodeListItem =
+  nodes : array[0..10] of TAnalogNodeListItem =
   ( ( name : 'Node1'; node_id : 1 ),
    ( name : 'Node9'; node_id : 9 ),
-   ( name : 'Node11'; node_id : 11 )
+   ( name : 'Node10'; node_id : 10 ),
+   ( name : 'Node11'; node_id : 11 ),
+   ( name : 'Node12'; node_id : 12 ),
+   ( name : 'Node13'; node_id : 13 ),
+   ( name : 'Node14'; node_id : 14 ),
+   ( name : 'Node15'; node_id : 15 ),
+   ( name : 'Node16'; node_id : 16 ),
+   ( name : 'Node17'; node_id : 17 ),
+   ( name : 'Node18'; node_id : 18 )
    );
 
 constructor TAnalogNode.Create(powerhandler: TPowerHandler;
-  powersource: DeviceIDType; node_id: Integer; can_id : Integer );
+  powersource: DeviceIDType; node_id: Integer; can_id : Integer; Channel : Integer );
 begin
-  inherited Create(powerhandler, powersource, can_id);
+  inherited Create(powerhandler, powersource, can_id, Channel);
   self.node_id := node_id;
 end;
 
@@ -145,6 +198,15 @@ begin
   CanSend(can_id,msgout,6,0);
 end;
 
+procedure TAnalogNode10.SyncHandler;
+var
+  msgout: array[0..7] of byte;
+  i : integer;
+begin
+  for I := 0 to 7 do
+    msgout[i] := 0;
+  CanSend(can_id,msgout,6,0);
+end;
 
 procedure TAnalogNode11.SyncHandler;
 var
@@ -177,6 +239,76 @@ begin
 end;
 
 
+procedure TAnalogNode12.SyncHandler;
+var
+  msgout: array[0..7] of byte;
+  i : integer;
+begin
+  for I := 0 to 7 do
+    msgout[i] := 0;
+  CanSend(can_id,msgout,6,0);
+end;
+
+procedure TAnalogNode13.SyncHandler;
+var
+  msgout: array[0..7] of byte;
+  i : integer;
+begin
+  for I := 0 to 7 do
+    msgout[i] := 0;
+  CanSend(can_id,msgout,6,0);
+end;
+
+procedure TAnalogNode14.SyncHandler;
+var
+  msgout: array[0..7] of byte;
+  i : integer;
+begin
+  for I := 0 to 7 do
+    msgout[i] := 0;
+  CanSend(can_id,msgout,6,0);
+end;
+
+
+procedure TAnalogNode15.SyncHandler;
+var
+  msgout: array[0..7] of byte;
+  i : integer;
+begin
+  for I := 0 to 7 do
+    msgout[i] := 0;
+  CanSend(can_id,msgout,6,0);
+end;
+
+procedure TAnalogNode16.SyncHandler;
+var
+  msgout: array[0..7] of byte;
+  i : integer;
+begin
+  for I := 0 to 7 do
+    msgout[i] := 0;
+  CanSend(can_id,msgout,6,0);
+end;
+
+procedure TAnalogNode17.SyncHandler;
+var
+  msgout: array[0..7] of byte;
+  i : integer;
+begin
+  for I := 0 to 7 do
+    msgout[i] := 0;
+  CanSend(can_id,msgout,6,0);
+end;
+
+procedure TAnalogNode18.SyncHandler;
+var
+  msgout: array[0..7] of byte;
+  i : integer;
+begin
+  for I := 0 to 7 do
+    msgout[i] := 0;
+  CanSend(can_id,msgout,6,0);
+end;
 
 function IsBitSet(const AValueToCheck, ABitIndex: Integer): Boolean;
 begin
@@ -188,9 +320,17 @@ var
   I : Integer;
 begin
   //inherited Create(powerhandler, none);
-  nodes[0].node := TAnalogNode1.Create(powerhandler, LV, nodes[0].node_id, AnalogNode1_ID);
-  nodes[1].node := TAnalogNode9.Create(powerhandler, LV, nodes[1].node_id, AnalogNode9_ID);
-  nodes[2].node := TAnalogNode11.Create(powerhandler, LV, nodes[2].node_id, AnalogNode11_ID);
+  nodes[0].node := TAnalogNode1.Create(powerhandler, LV, nodes[0].node_id, AnalogNode1_ID, 1);
+  nodes[1].node := TAnalogNode9.Create(powerhandler, LV, nodes[1].node_id, AnalogNode9_ID, 0);
+  nodes[2].node := TAnalogNode10.Create(powerhandler, LV, nodes[2].node_id, AnalogNode10_ID, 0);
+  nodes[3].node := TAnalogNode11.Create(powerhandler, LV, nodes[3].node_id, AnalogNode11_ID, 0);
+  nodes[4].node := TAnalogNode12.Create(powerhandler, LV, nodes[4].node_id, AnalogNode12_ID, 0);
+  nodes[5].node := TAnalogNode13.Create(powerhandler, LV, nodes[5].node_id, AnalogNode13_ID, 0);
+  nodes[6].node := TAnalogNode14.Create(powerhandler, LV, nodes[6].node_id, AnalogNode14_ID, 0);
+  nodes[7].node := TAnalogNode15.Create(powerhandler, LV, nodes[7].node_id, AnalogNode15_ID, 0);
+  nodes[8].node := TAnalogNode16.Create(powerhandler, LV, nodes[8].node_id, AnalogNode16_ID, 0);
+  nodes[9].node := TAnalogNode17.Create(powerhandler, LV, nodes[9].node_id, AnalogNode17_ID, 0);
+  nodes[10].node := TAnalogNode18.Create(powerhandler, LV, nodes[10].node_id, AnalogNode18_ID, 0);
 
   listptr := List;
 

@@ -21,7 +21,7 @@ type
 
   TIMUHandler = class(TDevice)
   public
-    constructor Create( const powerhandler : TPowerHandler; const powersource : DeviceIDtype; const can_id : Integer );
+    constructor Create( const powerhandler : TPowerHandler; const powersource : DeviceIDtype; const can_id : Integer; const Channel : Integer );
   protected
     procedure CyclicHandler; override;
   end;
@@ -37,9 +37,9 @@ uses System.DateUtils, CanTest, powernode;
 {$R *.dfm}
 
 constructor TIMUHandler.Create(const powerhandler: TPowerHandler;
-  const powersource: DeviceIDtype; const can_id: Integer);
+  const powersource: DeviceIDtype; const can_id: Integer; const Channel : Integer );
 begin
-  inherited Create(powerhandler, powersource, can_id, 10);
+  inherited Create(powerhandler, powersource, can_id, Channel, 10);
 end;
 
 function StuffMsg(const A, B, C, D, E, F, G, H: byte): TMsgArray;

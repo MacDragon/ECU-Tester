@@ -117,6 +117,7 @@ canIoCtl
 canGetChannelData
 canSetBusParamsC200
 }
+//    function IoCtl( func: Cardinal; buf: Pointer; buflen: Cardinal): integer;
 
     { Runtime-only properties }
     property CanHnd: canHandle read FCanHnd;
@@ -475,6 +476,12 @@ procedure TCanChannelEx.BusOn;
 begin
    BusActive := True;
 end;
+
+//function TCanChannelEx.IoCtl( func: Cardinal; buf: Pointer; buflen: Cardinal): integer;
+//begin
+//  result := canIoCtl(FCanHnd, func, buf, buflen);
+ //function(handle: canHandle; func: Cardinal; buf: Pointer; buflen: Cardinal): canStatus; stdcall;
+//end;
 
 procedure TCanChannelEx.BusOff;
 begin

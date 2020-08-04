@@ -12,6 +12,7 @@ type
                          powersource : DeviceIDType;
                          node_id : Integer;
                          can_id : Integer;
+                         Channel : Integer;
                          Devices : array of DeviceIDtype; defaultpower : DeviceIDtypes );
     procedure powerOn; override;
     procedure unplug; override;
@@ -115,7 +116,7 @@ var
 begin
   for I := 0 to 7 do
     msgout[i] := 0;
-  MainForm.CanSend(can_id,msgout,3,0);
+  CanSend(can_id,msgout,3,0);
 end;
 
 
@@ -182,12 +183,13 @@ constructor TPowerNode.Create( powerhandler : TPowerHandler;
                          powersource : DeviceIDType;
                          node_id : Integer;
                          can_id : Integer;
+                         Channel : Integer;
                          Devices : array of DeviceIDtype;
                          defaultpower : DeviceIDtypes );
 var
    i : integer;
 begin
-  inherited Create(powerhandler, powersource, can_id);
+  inherited Create(powerhandler, powersource, can_id, Channel);
   self.node_id := node_id;
   for i := 0 to 5 do
     self.Devices[i] := Devices[i];
