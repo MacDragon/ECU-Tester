@@ -24,6 +24,7 @@ object AnalogNodesForm: TAnalogNodesForm
     ItemHeight = 13
     ParentColor = True
     TabOrder = 0
+    OnClick = AnalogNodesListClick
   end
   object ADCGroup: TGroupBox
     Left = 119

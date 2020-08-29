@@ -39,6 +39,7 @@ type
     BSPDBefore: TCheckBox;
     BSPDAfter: TCheckBox;
     IMD: TCheckBox;
+    ECUShutdown: TCheckBox;
     procedure PowerNodesListClick(Sender: TObject);
     procedure LVPowerClick(Sender: TObject);
     procedure HVonClick(Sender: TObject);

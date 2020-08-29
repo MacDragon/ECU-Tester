@@ -149,4 +149,14 @@ object PowerNodesForm: TPowerNodesForm
     State = cbChecked
     TabOrder = 11
   end
+  object ECUShutdown: TCheckBox
+    Left = 431
+    Top = 117
+    Width = 97
+    Height = 17
+    Caption = 'ECU Shutdown'
+    Checked = True
+    State = cbChecked
+    TabOrder = 12
+  end
 end

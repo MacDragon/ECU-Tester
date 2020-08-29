@@ -87,6 +87,7 @@ type
   TAnalogNodeListHandler = class(TObject)
   public
     constructor Create( powerhandler : TPowerHandler; List : TCheckListBox);
+    procedure Enabled( node: integer; state : boolean );
 //    procedure processSync;
   private
        listptr : TCheckListBox;
@@ -121,6 +122,7 @@ type
     procedure ScrollSteeringChange(Sender: TObject);
     procedure SteeringChange(Sender: TObject);
     procedure AccelPedalChange(Sender: TObject);
+    procedure AnalogNodesListClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -372,6 +374,11 @@ begin
    AccelR.Text := AccelPedal.Position.ToString;
 end;
 
+procedure TAnalogNodesForm.AnalogNodesListClick(Sender: TObject);
+begin
+  AnalogNodes.enabled(AnalogNodesList.ItemIndex, AnalogNodesList.Checked[AnalogNodesList.ItemIndex]);
+end;
+
 procedure TAnalogNodesForm.BrakePedalChange(Sender: TObject);
 begin
    BrakeF.Text := BrakePedal.Position.ToString;
@@ -386,6 +393,11 @@ end;
 procedure TAnalogNodesForm.SteeringChange(Sender: TObject);
 begin
   ScrollSteering.position := StrToInt(Steering.Text);
+end;
+
+procedure TAnalogNodeListHandler.Enabled(node: integer; state: boolean);
+begin
+  nodes[node].node.Enabled := state;
 end;
 
 end.

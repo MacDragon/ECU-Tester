@@ -817,6 +817,18 @@ begin
           end;
 
           $20 :  begin
+                    if ( msg[7] and $80 ) > 0 then
+                        begin
+                          ShutdownR.Caption := 'Closed';
+                          Power.setPower( AllowHV, true );
+                        end
+                        else
+                        begin
+                          ShutdownR.Caption := 'Open';
+                          Power.setPower( AllowHV, false );
+                        end;
+
+
                     if msg[0] = 20 then
                     begin
                        case msg[1] of
