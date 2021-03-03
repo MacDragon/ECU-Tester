@@ -189,7 +189,7 @@ object MainForm: TMainForm
       Top = 105
       Width = 74
       Height = 189
-      Caption = 'LEDs'
+      Caption = 'LED State'
       TabOrder = 12
       object RTDMLED: TCheckBox
         Left = 18
@@ -623,7 +623,7 @@ object MainForm: TMainForm
       Top = 300
       Width = 66
       Height = 72
-      Caption = 'PDM'
+      Caption = 'PDM Req'
       TabOrder = 16
       object HV: TCheckBox
         Left = 16

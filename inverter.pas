@@ -40,6 +40,7 @@ type
     procedure PowerOn; override;
     procedure SyncHandler; override;
  //   procedure CyclicHandler; override;
+    procedure getIDs( var IDs : TIDArray ); override;
     function CANHandler( const msg : array of byte; const dlc : byte; const id : integer ) : boolean; override;
   end;
 
@@ -81,6 +82,12 @@ begin
 
 end;
 
+procedure TInverterHandler.getIDs( var IDs : TIDArray );
+begin
+  SetLength(IDs, 1);
+  IDs[0] := can_id+$400;
+end;
+
 function TInverterHandler.CANHandler(const msg: array of byte; const dlc: byte;
   const id: integer): boolean;
 var
@@ -100,7 +107,13 @@ begin
 
         6:  InverterStatus := 49;
 
-        7:  InverterStatus := 51;
+        7:
+        begin
+          if InverterStatus = 49 then
+             InverterStatus := 51
+          else
+            InverterStatus := 49;
+        end;
 
         15: InverterStatus := 55;
 

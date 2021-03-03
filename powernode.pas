@@ -20,6 +20,7 @@ type
     defaultpower : set of DeviceIDtype;
     node_id : integer;
     Devices : array[0..5] of DeviceIDtype;
+    procedure getIDs( var IDs : TIDArray ); override;
     function CANHandler( const msg : array of byte; const dlc : byte; const can_id : integer ) : boolean; override;
   end;
 
@@ -127,6 +128,13 @@ end;
 
 
 { TPowerNode }
+
+
+procedure TPowerNode.getIDs( var IDs : TIDArray );
+begin
+  SetLength(IDs, 1);
+  IDs[0] := $602;
+end;
 
 function TPowerNode.CanHandler( const msg: array of byte; const dlc: byte;
   const can_id: integer): boolean;

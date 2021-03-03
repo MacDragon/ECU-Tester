@@ -102,7 +102,7 @@ begin
   CanSend( $172, msg, 6, 0);
 
   msg :=  StuffMsg($D1, $25, $13, $C8, $10, $27, 0, 0 );
-  CanSend( $220, msg, 6, 0);
+  CanSend( $220, msg, 8, 0);
 end;
 
 { TIMUForm }

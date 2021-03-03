@@ -5,6 +5,8 @@ interface
 uses PowerHandler, global, CanChanEx;
 
 type
+  TIDArray = array of Word;
+
   TDevice = class(TObject)
   private
     function isEnabled: boolean;
@@ -13,6 +15,9 @@ type
     {$ifdef devicecan}
     function isOnBus: boolean;
     procedure setOnbus(const Value: boolean);
+    {$endif}
+    {$ifdef devicecan}
+    akfjhdsk
     {$endif}
   public
     constructor Create( const powerhandler : TPowerHandler;
@@ -32,6 +37,8 @@ type
 
     function CANReceive( const msg : array of byte; const dlc : byte; const id, bus : integer ) : boolean;
     procedure Output( const str: String);
+    function getBus : Byte;
+    procedure getIDs( var IDs : TIDArray ); virtual;
   protected
     connected : Boolean;
     connectionprocessed : boolean;
@@ -52,7 +59,7 @@ type
     function CanSend(id: Longint; var msg; dlc, flags: Cardinal): integer;
   private
     CANFail : Boolean;
-    Channel : Integer;
+    Channel : Byte;
  //   CanChannel: TCanChannelEx;
     lastsend : TDateTime;
     cycletime : Int64;
@@ -65,6 +72,17 @@ uses CanTest, System.SysUtils, System.DateUtils, devicelist, canlib,  Vcl.Dialog
 procedure TDevice.Output(const str: String);
 begin
   MainForm.AddOutput(str);
+end;
+
+function TDevice.getBus : Byte;
+begin
+  result := Channel;
+end;
+
+
+procedure TDevice.getIDs( var IDs : TIDArray );
+begin
+
 end;
 
 {$ifdef devicecan}
