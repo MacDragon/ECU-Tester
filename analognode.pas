@@ -123,6 +123,7 @@ type
     procedure SteeringChange(Sender: TObject);
     procedure AccelPedalChange(Sender: TObject);
     procedure AnalogNodesListClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
   public
@@ -383,6 +384,11 @@ procedure TAnalogNodesForm.BrakePedalChange(Sender: TObject);
 begin
    BrakeF.Text := BrakePedal.Position.ToString;
    BrakeR.Text := BrakePedal.Position.ToString;
+end;
+
+procedure TAnalogNodesForm.FormCreate(Sender: TObject);
+begin
+  AnalogNodes := TAnalogNodeListHandler.Create(Power, self.AnalogNodesList);
 end;
 
 procedure TAnalogNodesForm.ScrollSteeringChange(Sender: TObject);

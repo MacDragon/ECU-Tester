@@ -24,6 +24,7 @@ type
     ShutD: TCheckBox;
     connected: TCheckBox;
     procedure connectedClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
   public
@@ -50,7 +51,6 @@ var
   msg: array[0..7] of byte;
   i : integer;
 begin
-
   msg[1] := msg[1];//+badvalue;
  // if badvalue>0 then badvalue := badvalue-1;
   msg[3] := 100;
@@ -84,6 +84,11 @@ end;
 procedure TPDMForm.connectedClick(Sender: TObject);
 begin
  PDMdevice.Enabled := connected.Checked;
+end;
+
+procedure TPDMForm.FormCreate(Sender: TObject);
+begin
+  PDMDevice := TPDMHandler.Create(Power,DeviceIDtype.LV, $520, 0);
 end;
 
 end.

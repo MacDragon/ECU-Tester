@@ -1,4 +1,4 @@
-unit inverter;
+unit siemensinverter;
 
 interface
 
@@ -8,7 +8,7 @@ uses
   Vcl.CheckLst, device, global, Vcl.StdCtrls, PowerHandler, Vcl.ExtCtrls;
 
 type
-  TInverterForm = class(TForm)
+  TSiemensInverterForm = class(TForm)
     Connected: TCheckBox;
     InverterL1Internal: TLabel;
     InverterL1Stat: TLabel;
@@ -25,6 +25,7 @@ type
     Timer1: TTimer;
     procedure ConnectedClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
   public
@@ -32,7 +33,7 @@ type
   end;
 
 type
-  TInverterHandler = class(TDevice)
+  TSiemensInverterHandler = class(TDevice)
   public
     function getStatus : Integer;
   protected
@@ -45,11 +46,11 @@ type
   end;
 
 var
-  InverterR1 : TInverterHandler;
-  InverterR2 : TInverterHandler;
-  InverterL1 : TInverterHandler;
-  InverterL2 : TInverterHandler;
-  InverterForm : TInverterForm;
+  SiemensInverterR1 : TSiemensInverterHandler;
+  SiemensInverterR2 : TSiemensInverterHandler;
+  SiemensInverterL1 : TSiemensInverterHandler;
+  SiemensInverterL2 : TSiemensInverterHandler;
+  SiemensInverterForm : TSiemensInverterForm;
 
 implementation
 
@@ -57,12 +58,12 @@ uses CanTest, powernode;
 
 {$R *.dfm}
 
-function TInverterHandler.getStatus : Integer;
+function TSiemensInverterHandler.getStatus : Integer;
 begin
   result := InverterStatus;
 end;
 
-procedure TInverterHandler.PowerOn;
+procedure TSiemensInverterHandler.PowerOn;
 var
   msg : array[0..7] of byte;
 begin
@@ -82,13 +83,13 @@ begin
 
 end;
 
-procedure TInverterHandler.getIDs( var IDs : TIDArray );
+procedure TSiemensInverterHandler.getIDs( var IDs : TIDArray );
 begin
   SetLength(IDs, 1);
   IDs[0] := can_id+$400;
 end;
 
-function TInverterHandler.CANHandler(const msg: array of byte; const dlc: byte;
+function TSiemensInverterHandler.CANHandler(const msg: array of byte; const dlc: byte;
   const id: integer): boolean;
 var
   msgout: array[0..7] of byte;
@@ -138,7 +139,7 @@ begin
   end;
 end;
 
-procedure TInverterHandler.SyncHandler;
+procedure TSiemensInverterHandler.SyncHandler;
 var
   msgout: array[0..7] of byte;
   i : integer;
@@ -173,35 +174,43 @@ begin
 
 end;
 
-procedure TInverterForm.ConnectedClick(Sender: TObject);
+procedure TSiemensInverterForm.ConnectedClick(Sender: TObject);
 begin
-  InverterL1.Enabled := Connected.Checked;
-  InverterR1.Enabled := Connected.Checked;
-  InverterL2.Enabled := Connected.Checked;
-  InverterR2.Enabled := Connected.Checked;
+  SiemensInverterL1.Enabled := Connected.Checked;
+  SiemensInverterR1.Enabled := Connected.Checked;
+  SiemensInverterL2.Enabled := Connected.Checked;
+  SiemensInverterR2.Enabled := Connected.Checked;
 end;
 
-procedure TInverterForm.Timer1Timer(Sender: TObject);
+procedure TSiemensInverterForm.FormCreate(Sender: TObject);
 begin
-  if InverterR1.Powered then
-    InverterForm.InverterR1Stat.Caption := IntToStr(InverterR1.getStatus)
-  else
-    InverterForm.InverterR1Stat.Caption := '-';
+  SiemensInverterL1 := TSiemensInverterHandler.Create(Power, DeviceIDtype.Inverters, $7E, 1);
+  SiemensInverterL2 := TSiemensInverterHandler.Create(Power, DeviceIDtype.Inverters, $7C, 1);
+  SiemensInverterR1 := TSiemensInverterHandler.Create(Power, DeviceIDtype.Inverters, $7F, 1);
+  SiemensInverterR2 := TSiemensInverterHandler.Create(Power, DeviceIDtype.Inverters, $7D, 1);
+end;
 
-  if InverterR2.Powered then
-    InverterForm.InverterR2Stat.Caption := IntToStr(InverterR2.getStatus)
+procedure TSiemensInverterForm.Timer1Timer(Sender: TObject);
+begin
+  if SiemensInverterR1.Powered then
+    SiemensInverterForm.InverterR1Stat.Caption := IntToStr(SiemensInverterR1.getStatus)
   else
-    InverterForm.InverterR2Stat.Caption := '-';
+    SiemensInverterForm.InverterR1Stat.Caption := '-';
 
-  if InverterL1.Powered then
-    InverterForm.InverterL1Stat.Caption := IntToStr(InverterL1.getStatus)
+  if SiemensInverterR2.Powered then
+    SiemensInverterForm.InverterR2Stat.Caption := IntToStr(SiemensInverterR2.getStatus)
   else
-    InverterForm.InverterL1Stat.Caption := '-';
+    SiemensInverterForm.InverterR2Stat.Caption := '-';
 
-  if InverterL2.Powered then
-    InverterForm.InverterL2Stat.Caption := IntToStr(InverterL2.getStatus)
+  if SiemensInverterL1.Powered then
+    SiemensInverterForm.InverterL1Stat.Caption := IntToStr(SiemensInverterL1.getStatus)
   else
-    InverterForm.InverterL2Stat.Caption := '-';
+    SiemensInverterForm.InverterL1Stat.Caption := '-';
+
+  if SiemensInverterL2.Powered then
+    SiemensInverterForm.InverterL2Stat.Caption := IntToStr(SiemensInverterL2.getStatus)
+  else
+    SiemensInverterForm.InverterL2Stat.Caption := '-';
 end;
 
 end.

@@ -17,8 +17,9 @@ uses
   ivt in 'ivt.pas' {IVTForm},
   imu in 'imu.pas' {IMUForm},
   memorator in 'memorator.pas' {MemoratorForm},
-  inverter in 'inverter.pas' {InverterForm},
-  devicelist in 'devicelist.pas';
+  devicelist in 'devicelist.pas',
+  siemensinverter in 'siemensinverter.pas' {SiemensInverterForm},
+  lenzeinverter in 'lenzeinverter.pas' {LenzeInverterForm};
 
 {$R *.res}
 
@@ -26,6 +27,8 @@ begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TMainForm, MainForm);
+// Application.CreateForm(TSiemensInverterForm, SiemensInverterForm);
+//  Application.CreateForm(TLenzeInverterForm, LenzeInverterForm);
   //  Application.CreateForm(TIMUForm, IMUForm);
 //  Application.CreateForm(TMemoratorForm, MemoratorForm);
 //  Application.CreateForm(TInverterForm, InverterForm);

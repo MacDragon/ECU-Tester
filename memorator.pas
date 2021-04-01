@@ -11,6 +11,7 @@ type
   TMemoratorForm = class(TForm)
     Connected: TCheckBox;
     procedure ConnectedClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
   public
@@ -64,6 +65,11 @@ end;
 procedure TMemoratorForm.ConnectedClick(Sender: TObject);
 begin
   memoratordevice.Enabled := Connected.Checked;
+end;
+
+procedure TMemoratorForm.FormCreate(Sender: TObject);
+begin
+  MemoratorDevice := TMemoratorHandler.Create(Power, DeviceIDType.Front1, $7B, 0);
 end;
 
 end.

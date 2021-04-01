@@ -13,6 +13,7 @@ type
     RConnected: TCheckBox;
     procedure LConnectedClick(Sender: TObject);
     procedure RConnectedClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
   public
@@ -76,6 +77,12 @@ end;
 procedure TFrontSpeedForm.RConnectedClick(Sender: TObject);
 begin
     FrontrSpeedDevice.Enabled := RConnected.Checked;
+end;
+
+procedure TFrontSpeedForm.FormCreate(Sender: TObject);
+begin
+  FrontLSpeedDevice := TFrontSpeedHandler.Create(Power, DeviceIDType.Front2, $70);
+  FrontRSpeedDevice := TFrontSpeedHandler.Create(Power, DeviceIDType.Front2, $71);
 end;
 
 procedure TFrontSpeedForm.LConnectedClick(Sender: TObject);

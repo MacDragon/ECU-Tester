@@ -37,6 +37,12 @@ type
 
 const
   NodeAck_ID = 601;
+  RPDO1_id = $200;
+  RPDO2_id = $300;
+  RPDO3_id = $400;
+  RPDO4_id = $500;
+  RPDO5_id = $540;
+  SDORX_id = $580;
 
 implementation
 

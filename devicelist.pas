@@ -75,8 +75,8 @@ begin
     TDevice(Device).getIDs(IDs);
 
     // find position in id handling list to insert device id.
-    if  Length(IDs) > 0 then
-      for I := 0 to Length(IDs) do
+    if Length(IDs) > 0 then
+      for I := 0 to Length(IDs)-1 do
       begin
         J := 0;
         // find first available slot, most likely first entry for most ID's

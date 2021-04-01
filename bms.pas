@@ -36,7 +36,7 @@ implementation
 
 {$R *.dfm}
 
-uses CanTest, powernode;
+uses CanTest, powernode, PowerHandler;
 
 procedure TBMSHandler.SyncHandler;
 var
@@ -84,6 +84,8 @@ end;
 
 procedure TBMSForm.FormCreate(Sender: TObject);
 begin
+  // BMS is always powered if LV on, as it is supplying the power.
+  BMSDevice := TBMSHandler.Create(Power,DeviceIDtype.LV, $8, 0);
   BMSErrorCode.ItemIndex := 0;
 end;
 

@@ -11,7 +11,11 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics,
   Controls, Forms, Dialogs, StdCtrls, CanChanEx, ExtCtrls,
   Mask, System.Diagnostics, analognode, powernode, Vcl.CheckLst,
-  global, powerhandler, memorator, bms, ivt, inverter, pdm, frontspeed, imu,
+  global, powerhandler, memorator, bms, ivt,
+
+  siemensinverter, lenzeinverter,
+
+  pdm, frontspeed, imu,
   Vcl.ComCtrls, device;
 
 type
@@ -526,32 +530,20 @@ end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
+// Initilise the device list so can add device tabs.
+  Devices := TDevices.Create;
+
   addtab(@PowerNodesForm, TPowerNodesForm);
+
   addtab(@AnalogNodesForm, TAnalogNodesForm);
-  addtab(@InverterForm, TInverterForm);
+  addtab(@SiemensInverterForm, TSiemensInverterForm);
+  addtab(@LenzeInverterForm, TLenzeInverterForm);
   addtab(@PDMForm, TPDMForm);
   addtab(@BMSForm, TBMSForm);
   addtab(@IVTForm, TIVTForm);
   addtab(@MemoratorForm, TMemoratorForm);
   addtab(@IMUForm, TIMUForm);
 //  addtab(@FrontSpeedForm, TFrontSpeedForm);
-
-  Devices := TDevices.Create;
-
-  Power := TPowerHandler.Create(PowerNodesForm.PowerNodesList);
-  AnalogNodes := TAnalogNodeListHandler.Create(Power, AnalogNodesForm.AnalogNodesList);
-  BMSDevice := TBMSHandler.Create(Power,DeviceIDtype.LV, $8, 0);
-  // BMS is always powered if LV on, as it is supplying the power.
-  PDMDevice := TPDMHandler.Create(Power,DeviceIDtype.LV, $520, 0);
-  IMUDevice := TIMUHandler.Create(Power,DeviceIDType.Front2, $0, 1);
-  IVTDevice := TIVTHandler.Create(Power,DeviceIDtype.IVT, $511, 1);
-  MemoratorDevice := TMemoratorHandler.Create(Power, DeviceIDType.Front1, $7B, 0);
-  InverterL1 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7E, 1);
-  InverterL2 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7C, 1);
-  InverterR1 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7F, 1);
-  InverterR2 := TInverterHandler.Create(Power, DeviceIDtype.Inverters, $7D, 1);
-//  FrontLSpeedDevice := TFrontSpeedHandler.Create(Power, DeviceIDType.Front2, $70);
-//  FrontRSpeedDevice := TFrontSpeedHandler.Create(Power, DeviceIDType.Front2, $71);
 
   try
     CanChannel1 := TCanChannelEx.Create(Self);

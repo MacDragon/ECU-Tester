@@ -11,6 +11,7 @@ type
   TIVTForm = class(TForm)
     Connected: TCheckBox;
     procedure ConnectedClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
   public
@@ -141,6 +142,11 @@ end;
 procedure TIVTForm.ConnectedClick(Sender: TObject);
 begin
   ivtdevice.Enabled := Connected.Checked;
+end;
+
+procedure TIVTForm.FormCreate(Sender: TObject);
+begin
+  IVTDevice := TIVTHandler.Create(Power,DeviceIDtype.IVT, $511, 1);
 end;
 
 end.

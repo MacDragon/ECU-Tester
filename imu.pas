@@ -12,6 +12,7 @@ type
   TIMUForm = class(TForm)
     Connected: TCheckBox;
     procedure ConnectedClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
   public
@@ -110,6 +111,11 @@ end;
 procedure TIMUForm.ConnectedClick(Sender: TObject);
 begin
     IMUDevice.Enabled := Connected.Checked;
+end;
+
+procedure TIMUForm.FormCreate(Sender: TObject);
+begin
+  IMUDevice := TIMUHandler.Create(Power,DeviceIDType.Front2, $0, 1);
 end;
 
 end.

@@ -1,7 +1,7 @@
-object InverterForm: TInverterForm
+object LenzeInverterForm: TLenzeInverterForm
   Left = 0
   Top = 0
-  Caption = 'Inverters'
+  Caption = 'Lenze Inverters'
   ClientHeight = 261
   ClientWidth = 505
   Color = clBtnFace
@@ -11,6 +11,7 @@ object InverterForm: TInverterForm
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 13
   object InverterL1Internal: TLabel
@@ -93,6 +94,34 @@ object InverterForm: TInverterForm
   object InverterR2Internal: TLabel
     Left = 200
     Top = 131
+    Width = 4
+    Height = 13
+    Caption = '-'
+  end
+  object Label2: TLabel
+    Left = 306
+    Top = 72
+    Width = 32
+    Height = 13
+    Caption = 'APPC1'
+  end
+  object APPC1State: TLabel
+    Left = 378
+    Top = 72
+    Width = 4
+    Height = 13
+    Caption = '-'
+  end
+  object Label3: TLabel
+    Left = 306
+    Top = 91
+    Width = 32
+    Height = 13
+    Caption = 'APPC2'
+  end
+  object APPC2State: TLabel
+    Left = 378
+    Top = 91
     Width = 4
     Height = 13
     Caption = '-'

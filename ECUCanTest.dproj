@@ -128,11 +128,15 @@
             <Form>MemoratorForm</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="inverter.pas">
-            <Form>InverterForm</Form>
+        <DCCReference Include="devicelist.pas"/>
+        <DCCReference Include="siemensinverter.pas">
+            <Form>SiemensInverterForm</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="devicelist.pas"/>
+        <DCCReference Include="lenzeinverter.pas">
+            <Form>LenzeInverterForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

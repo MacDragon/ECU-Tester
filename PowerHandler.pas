@@ -44,6 +44,7 @@ type
     procedure LVPowerClick(Sender: TObject);
     procedure HVonClick(Sender: TObject);
     procedure PowerNodeErrorClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
   public
@@ -228,6 +229,11 @@ constructor TPowerNodeListItem.Create(name: string; node: TPowerNode);
 begin
   self.name := name;
   self.node := node;
+end;
+
+procedure TPowerNodesForm.FormCreate(Sender: TObject);
+begin
+  Power := TPowerHandler.Create(self.PowerNodesList);
 end;
 
 procedure TPowerNodesForm.HVonClick(Sender: TObject);
