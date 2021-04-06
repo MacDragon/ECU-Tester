@@ -52,6 +52,8 @@ type
     procedure getIDs( var IDs : TIDArray ); override;
     function CANHandler( const msg : array of byte; const dlc : byte; const id : integer ) : boolean; override;
     function LenzeRunState( const request : byte; const curstatus : byte ) : byte;
+    procedure SendAPPC;
+    procedure SendMC;
   end;
 
 var
@@ -168,14 +170,73 @@ begin
   end;
 end;
 
-procedure TLenzeInverterHandler.SyncHandler;
+procedure TLenzeInverterHandler.SendAPPC;
 var
   msgout: array[0..7] of byte;
   i : integer;
 begin
-    if ( ( InverterStatus1 = 7 ) or ( InverterStatus1 = 15 ) ) and ( not Power.isPowered(DeviceIDtype.HV) ) then // inverters have lost HV, send error.
-    begin
-      msgout[0] := 0;          // siemens undervolt error.
+  msgout[0] := 0;
+  msgout[1] := 1;
+  msgout[2] := 0;
+  msgout[3] := 0;
+  msgout[4] := 0;
+  msgout[5] := 0;
+  msgout[6] := 0;
+  msgout[7] := 0;
+  CanSend(can_id+RPDO1_id,msgout,8,0);   // 201
+  msgout[1] := 0;
+  CanSend(can_id+RPDO2_id,msgout,8,0);   // 301
+  msgout[1] := 1;
+  CanSend(can_id+RPDO3_id,msgout,8,0);   // 401
+  msgout[1] := 0;
+  CanSend(can_id+RPDO4_id,msgout,8,0);   // 501
+  msgout[0] := $85;
+  msgout[1] := $8E;
+  CanSend(can_id+RPDO5_id,msgout,8,0);   // 541
+  msgout[0] := $1;
+  msgout[1] := $1;
+//  CanSend(0,msgout,2,0);   // 0 NMT id 1 go online.
+
+  // pdo error.  PDO length exceeded ?
+  msgout[0] := $20;
+  msgout[1] := $82;
+  msgout[2] := $11;
+  CanSend($80+can_id+31,msgout,8,0);   // 0 NMT id 1 go online.
+
+  // error reset.
+  msgout[0] := $0;
+  msgout[1] := $0;
+  msgout[2] := $0;
+  CanSend($80+can_id+31,msgout,8,0);
+end;
+
+procedure TLenzeInverterHandler.SendMC;
+var
+  msgout: array[0..7] of byte;
+  i : integer;
+  voltage : integer;
+  temp : integer;
+const
+  TPDO1_id = $180;
+
+  TPDO2_id = $1C0;
+  TPDO3_id = $240;
+  TPDO4_id = $280;
+
+  TPDO5_id = $2C0;
+  TPDO6_id = $340;
+  TPDO7_id = $380;
+begin
+  for i := 0 to 7 do msgout[i] := 0;
+
+  voltage := Power.getHVVoltage;// * 16;  // get current HV voltage from BMS.
+  temp := 24 * 16; // hard code temp for now.
+
+ // if voltage > 400 then
+  if ( ( InverterStatus1 = 7 ) or ( InverterStatus1 = 15 ) )
+        and voltage < 400 then // inverters have lost HV, send error.
+  begin
+ {     msgout[0] := 0;          // siemens undervolt error.
       msgout[1] := 16;
       msgout[2] := 129;
       msgout[3] := 93;
@@ -183,24 +244,77 @@ begin
       msgout[5] := 2;
       msgout[5] := 0;
       msgout[5] := 0;
-      CanSend($80+can_id,msgout,8,0);
+      CanSend($80+can_id,msgout,8,0);      }
       InverterStatus1 := 104; // set error state.
-    end;
+  end;
 
-    msgout[0] := InverterStatus1;
-    msgout[1] := 22;
-    msgout[2] := 0;
-    msgout[3] := 0;
-    msgout[4] := 0;
-    msgout[5] := 0;
+  if ( ( InverterStatus2 = 7 ) or ( InverterStatus2 = 15 ) )
+        and voltage < 400 then // inverters have lost HV, send error.
+  begin
+      InverterStatus2 := 104; // set error state.
+  end;
 
-  //     if Random(100) > 50 then  msg[1] := 0;
-    CanSend($280+can_id,msgout,6,0);
+  voltage := voltage * 16;
+  msgout[0] := voltage;
+  msgout[1] := voltage shr 8;
 
-    msgout[1] := 22;//+badvalue;
+  msgout[2] := temp;
+  msgout[3] := temp shr 8;
 
-    CanSend($380+can_id,msgout,4,0);
+  // general MC status.
+  CanSend(can_id+TPDO1_id,msgout,8,0);
+    
+  // Drive Profile Inverter A statusword
+  msgout[0] := InverterStatus1; //msg[1]+msg[0] shl 8;
 
+  // Inverter A Supervision: latched status 1
+//   val2 := msg[2]+msg[3] shl 8 + msg[4] shl 16 + msg[5] shl 24;
+  // Inverter A Supervision: latched status 2
+//   val3 := msg[6]+msg[7] shl 8;
+
+  // Motor 1
+  CanSend(can_id+TPDO2_id,msgout,8,0);
+  for i := 0 to 7 do msgout[i] := 0;
+  CanSend(can_id+TPDO3_id,msgout,8,0);
+  CanSend(can_id+TPDO4_id,msgout,8,0);
+
+  // Motor 2
+  msgout[0] := InverterStatus2;
+  CanSend(can_id+TPDO5_id,msgout,8,0);
+  for i := 0 to 7 do msgout[i] := 0;
+  CanSend(can_id+TPDO6_id,msgout,8,0);
+  CanSend(can_id+TPDO7_id,msgout,8,0);
+end;
+
+
+procedure TLenzeInverterHandler.SyncHandler;
+var
+  msgout: array[0..7] of byte;
+  i : integer;
+begin
+
+  // if APPC send is enabled, send
+  if APPCStatus > 0 then
+  begin
+    SendAPPC;
+  end;
+
+  {*
+  if ( ( InverterStatus1 = 7 ) or ( InverterStatus1 = 15 ) ) and ( not Power.isPowered(DeviceIDtype.HV) ) then // inverters have lost HV, send error.
+  begin
+    msgout[0] := 0;          // siemens undervolt error.
+    msgout[1] := 16;
+    msgout[2] := 129;
+    msgout[3] := 93;
+    msgout[4] := 117;
+    msgout[5] := 2;
+    msgout[6] := 0;
+    msgout[7] := 0;
+    CanSend($80+can_id,msgout,8,0);
+    InverterStatus1 := 104; // set error state.
+  end;
+  *}
+  SendMC;
 end;
 
 procedure TLenzeInverterForm.ConnectedClick(Sender: TObject);

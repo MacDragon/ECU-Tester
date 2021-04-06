@@ -17,6 +17,7 @@ type
     BMSErrorCode: TComboBox;
     procedure ConnectedClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure BMSVoltChange(Sender: TObject);
   private
     { Private declarations }
   public
@@ -24,7 +25,12 @@ type
   end;
 
   TBMSHandler = class(TDevice)
+  private
+    HVVoltage : Integer;
+    function GetVoltage: Integer;
+    procedure SetVoltage(const Value: Integer);
   public
+    property voltage : Integer read GetVoltage write SetVoltage;
     procedure SyncHandler; override;
   end;
 
@@ -37,6 +43,16 @@ implementation
 {$R *.dfm}
 
 uses CanTest, powernode, PowerHandler;
+
+function TBMSHandler.GetVoltage: Integer;
+begin
+  result := HVvoltage;
+end;
+
+procedure TBMSHandler.SetVoltage(const Value: Integer);
+begin
+  HVvoltage := Value;
+end;
 
 procedure TBMSHandler.SyncHandler;
 var
@@ -64,8 +80,12 @@ begin
   msg[0] := 0;//+badvalue;
   // if badvalue > 0 then badvalue := badvalue-1;
   msg[1] := 0;
-  msg[2] := 2;
-  msg[3] := 48;
+
+  msg[2] := voltage shr 8;
+  msg[3] := voltage;
+
+//  msg[2] := 2;
+//  msg[3] := 48;
   msg[4] := 0;
   msg[5] := 0;
   msg[6] := $AB;   // constant to verify message.
@@ -77,6 +97,11 @@ begin
 end;
 
 
+procedure TBMSForm.BMSVoltChange(Sender: TObject);
+begin
+  BMSDevice.voltage := StrToInt(BMSVolt.text);
+end;
+
 procedure TBMSForm.ConnectedClick(Sender: TObject);
 begin
   bmsdevice.Enabled := Connected.Checked;
@@ -87,6 +112,7 @@ begin
   // BMS is always powered if LV on, as it is supplying the power.
   BMSDevice := TBMSHandler.Create(Power,DeviceIDtype.LV, $8, 0);
   BMSErrorCode.ItemIndex := 0;
+  BMSDevice.voltage := StrToInt(BMSVolt.text);
 end;
 
 end.

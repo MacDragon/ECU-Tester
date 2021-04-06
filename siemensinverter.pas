@@ -144,7 +144,8 @@ var
   msgout: array[0..7] of byte;
   i : integer;
 begin
-    if ( ( InverterStatus = 7 ) or ( InverterStatus = 15 ) ) and ( not Power.isPowered(DeviceIDtype.HV) ) then // inverters have lost HV, send error.
+    if ( ( InverterStatus = 7 ) or ( InverterStatus = 15 ) )
+        and Power.getHVVoltage < 400 then // inverters have lost HV, send error.
     begin
       msgout[0] := 0;          // siemens undervolt error.
       msgout[1] := 16;

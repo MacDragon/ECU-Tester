@@ -37,6 +37,7 @@ object BMSForm: TBMSForm
     NumbersOnly = True
     TabOrder = 1
     Text = '560'
+    OnChange = BMSVoltChange
   end
   object Connected: TCheckBox
     Left = 24

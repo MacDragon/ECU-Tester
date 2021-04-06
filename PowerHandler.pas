@@ -18,6 +18,7 @@ type
     procedure setPower( state : Boolean ); overload;
     procedure Enabled( node: integer; state : boolean );
     function listPowered : String;
+    function getHVVoltage : Integer;
   private
     powered : DeviceIDtypes;
     listptr : TCheckListBox;
@@ -58,7 +59,7 @@ var
 
 implementation
 
-uses cantest, powernode, rtti, device, devicelist;
+uses cantest, powernode, rtti, device, devicelist, bms;
 
 {$R *.dfm}
 
@@ -81,6 +82,14 @@ type
 
 var
   nodes : TArray<TPowerNodeListItem>;
+
+function TPowerHandler.getHVVoltage : integer;
+begin
+  if Power.isPowered(DeviceIDType.HV) then
+    result := BMSDevice.voltage
+  else
+    result := 24;
+end;
 
 function TPowerHandler.isPowered( Device: DeviceIDtype ): boolean;
 begin
