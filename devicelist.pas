@@ -19,6 +19,7 @@ type
     procedure CANReceive( const msg : array of byte; const dlc : byte; const can_id, bus : integer );
     procedure processCyclic;
     procedure processPower;
+    procedure processSync;
     {$ifdef devicecan}
     property OnBus : boolean write setOnbus;
     {$endif}
@@ -53,6 +54,15 @@ var
 begin
   for i := 0 to devicecount-1 do
     Devices[i].processCyclic;
+end;
+
+
+procedure TDevices.processSync; // this should ideally process maybe one a ms.
+var
+  i : integer;
+begin
+  for i := 0 to devicecount-1 do
+    Devices[i].processSync;
 end;
 
 procedure TDevices.processPower;

@@ -1067,7 +1067,7 @@ begin
 
           case id of
           $80 :  begin    // canopen sync., speed sensors at least.
-
+                    Devices.processSync();
                  end;
 
           $999 :   begin  // received nmt message, respond.
