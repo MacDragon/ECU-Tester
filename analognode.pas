@@ -198,7 +198,7 @@ var
 begin
   for I := 0 to 7 do
     msgout[i] := 0;
-  CanSend(can_id,msgout,6,0);
+  CanSend(can_id,msgout,4,0);
 end;
 
 procedure TAnalogNode10.SyncHandler;
@@ -238,7 +238,7 @@ begin
 
   // surely should be 2 bytes? and brake pressures too?
 
-  CanSend(can_id,msgout,6,0);
+  CanSend(can_id,msgout,8,0);
 end;
 
 
@@ -249,7 +249,7 @@ var
 begin
   for I := 0 to 7 do
     msgout[i] := 0;
-  CanSend(can_id,msgout,6,0);
+  CanSend(can_id,msgout,4,0);
 end;
 
 procedure TAnalogNode13.SyncHandler;
@@ -259,7 +259,7 @@ var
 begin
   for I := 0 to 7 do
     msgout[i] := 0;
-  CanSend(can_id,msgout,6,0);
+  CanSend(can_id,msgout,4,0);
 end;
 
 procedure TAnalogNode14.SyncHandler;
@@ -280,7 +280,7 @@ var
 begin
   for I := 0 to 7 do
     msgout[i] := 0;
-  CanSend(can_id,msgout,6,0);
+  CanSend(can_id,msgout,3,0);
 end;
 
 procedure TAnalogNode16.SyncHandler;
@@ -290,7 +290,7 @@ var
 begin
   for I := 0 to 7 do
     msgout[i] := 0;
-  CanSend(can_id,msgout,6,0);
+  CanSend(can_id,msgout,3,0);
 end;
 
 procedure TAnalogNode17.SyncHandler;
@@ -300,7 +300,7 @@ var
 begin
   for I := 0 to 7 do
     msgout[i] := 0;
-  CanSend(can_id,msgout,6,0);
+  CanSend(can_id,msgout,3,0);
 end;
 
 procedure TAnalogNode18.SyncHandler;
@@ -310,7 +310,7 @@ var
 begin
   for I := 0 to 7 do
     msgout[i] := 0;
-  CanSend(can_id,msgout,6,0);
+  CanSend(can_id,msgout,3,0);
 end;
 
 function IsBitSet(const AValueToCheck, ABitIndex: Integer): Boolean;
